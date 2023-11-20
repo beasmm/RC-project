@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include "file.h"
+#include <file.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -63,10 +63,12 @@ int main(){
         get_word(open_.name);
         get_word(open_.asset_fname);
         get_word(open_.timeactive);
-        FILE *asset_image_file = open(open_.asset_fname);
+        FILE *asset_image_file;
+        asset_image_file = fopen(open_.asset_fname,"r");
         if(!asset_image_file){
         }
         else{
+        }
     }
 
     n = write(fd, msg, 21);
