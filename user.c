@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <file.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -16,16 +15,29 @@
 #define PASSWORD_SIZE 9
 #define NAME_SIZE 15
 
-typedef struct {
+typedef struct {   //struct with info to open auction
     char code[MAX_CMD_SIZE];
     char cmd[MAX_CMD_SIZE];
-    char uid[UID_SIZE];
+    int uid;
     char name[NAME_SIZE];
     char password[PASSWORD_SIZE];
     char asset_fname[NAME_SIZE];
     float start_value;
     float timeactive;
 } Open_;
+
+void get_word(char str[]){
+    char c = getchar();
+	int i = 0;
+	while (c == ' ')
+		c = getchar();
+	while (c != ' ' && c != '\n') {
+		str[i++] = c;
+		c = getchar();
+	}
+	str[i] = '\0';
+	return;
+}
 
 int main(){
     int fd, errcode;
@@ -35,9 +47,9 @@ int main(){
     struct sockaddr_in addr;
     char buffer[128];
     char msg[17];
-
+    char cmd[MAX_CMD_SIZE];
     int uid;
-    char password[9];
+    char password[PASSWORD_SIZE];
 
     fd=socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) exit(1);
@@ -51,24 +63,21 @@ int main(){
 
     n=connect(fd, res->ai_addr, res->ai_addrlen);
     if (n == -1) exit(1);
-    
-    Open_ open_;
 
-    get_word(open_.cmd);
+    get_word(cmd); //get command
 
-    if(strcmp("open", open_.cmd) == 0){
+    if(strcmp("open", cmd) == 0){ //open auction
+        Open_ open_;
+        strcpy(open_.cmd, cmd);
         strcpy(open_.code, "OPA");
-        strcpy(open_.uid,command.uid);
-        strcpy(open_.password, command.passwd);
+        strcpy(open_.uid,uid);
+        strcpy(open_.password, password);
         get_word(open_.name);
         get_word(open_.asset_fname);
         get_word(open_.timeactive);
-        FILE *asset_image_file;
-        asset_image_file = fopen(open_.asset_fname,"r");
-        if(!asset_image_file){
-        }
-        else{
-        }
+        FILE* asset_image_file;
+        asset_image_file = fopen(open_.asset_fname,"r"); //verificar se foi aberto
+        
     }
 
     n = write(fd, msg, 21);
