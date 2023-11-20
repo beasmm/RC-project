@@ -9,6 +9,22 @@
 #include <string.h>
 #define PORT "58011"
 
+#define CODE_SIZE 4
+#define MAX_CMD_SIZE 7
+#define UID_SIZE 7
+#define PASSWORD_SIZE 9
+#define NAME_SIZE 15
+
+typedef struct {
+    char code[MAX_CMD_SIZE];
+    char cmd[MAX_CMD_SIZE];
+    char uid[UID_SIZE];
+    char name[NAME_SIZE];
+    char password[PASSWORD_SIZE];
+    char asset_fname[NAME_SIZE];
+    float start_value;
+    float timeactive;
+} Open_;
 
 int main(){
     int fd, errcode;
@@ -35,8 +51,18 @@ int main(){
     n=connect(fd, res->ai_addr, res->ai_addrlen);
     if (n == -1) exit(1);
     
-    fgets(msg, 21, stdin);
-    printf(msg);
+    Open_ open_;
+
+    get_word(open_cmd);
+
+    if(strcmp("open", open_.cmd) == 0){
+        strcpy(open_.code, "OPA");
+        strcpy(open_.uid,command.uid);
+        strcpy(open_.password, command.passwd);
+        get_word(open_.name);
+        get_word(open_.asset_fname);
+        get_word(open_.timeactive);
+    }
 
     n = write(fd, msg, 21);
     if (n == -1) exit(1);
