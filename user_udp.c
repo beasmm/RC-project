@@ -107,4 +107,6 @@ int main(){
     
     freeaddrinfo(res);
     close(fd);
+
+    return 0;
 }
