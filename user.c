@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include "file.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -53,7 +54,7 @@ int main(){
     
     Open_ open_;
 
-    get_word(open_cmd);
+    get_word(open_.cmd);
 
     if(strcmp("open", open_.cmd) == 0){
         strcpy(open_.code, "OPA");
@@ -62,6 +63,10 @@ int main(){
         get_word(open_.name);
         get_word(open_.asset_fname);
         get_word(open_.timeactive);
+        FILE *asset_image_file = open(open_.asset_fname);
+        if(!asset_image_file){
+        }
+        else{
     }
 
     n = write(fd, msg, 21);
