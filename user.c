@@ -13,17 +13,17 @@
 #define MAX_CMD_SIZE 7
 #define UID_SIZE 7
 #define PASSWORD_SIZE 9
-#define NAME_SIZE 11
+#define NAME_SIZE 10
 
-typedef struct {   //struct with info to open auction
+typedef struct {                                    //struct with info to open auction
     char code[MAX_CMD_SIZE];
     char cmd[MAX_CMD_SIZE];
-    int uid,timeactive, size; //5 digits
+    int uid,timeactive, size;                       //5 digits
     char name[NAME_SIZE];
     char password[PASSWORD_SIZE];
     char asset_fname[NAME_SIZE];
     char data[128];
-    float start_value; //6 digits
+    float start_value;                              //6 digits
 } Open_;
 
 void get_word(char str[]){
@@ -41,7 +41,6 @@ void get_word(char str[]){
 
 int main(){
     int fd, errcode, uid;
-    ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
@@ -60,52 +59,62 @@ int main(){
     n=connect(fd, res->ai_addr, res->ai_addrlen);
     if (n == -1) exit(1);
 
-    get_word(cmd); //get command
+    get_word(cmd);
+    while(strcmp(cmd,"exit") != 0){
+        if(strcmp(cmd,"open") == 0){                               //open auction
+            Open_ open_;
+            FILE *fptr;
+            strcpy(open_.cmd, cmd);
+            strcpy(open_.code, "OPA");
+            strcpy(open_.uid,uid);                                //from login
+            strcpy(open_.password, password);                     //from login
+            get_word(open_.name);
+            get_word(open_.asset_fname);
+            get_word(open_.start_value);
+            get_word(open_.timeactive);
 
-    if(strcmp("open", cmd) == 0){ //open auction
-        Open_ open_;
-        FILE *fptr;
-        strcpy(open_.cmd, cmd);
-        strcpy(open_.code, "OPA");
-        strcpy(open_.uid,uid);
-        strcpy(open_.password, password);
-        get_word(open_.name);
-        get_word(open_.asset_fname);
-        get_word(open_.start_value);
-        get_word(open_.timeactive);
-        fptr = fopen(open_.asset_fname,"r");
-        if(fptr == NULL)
-            printf("Error opening file\n");
-        else{
-            fseek(fptr, 0, SEEK_END); //find size of file
-            open_.size = ftell(fptr);
-            fseek(fptr, 0, SEEK_SET); //finds begining of file
-            open_.data = (char*)malloc(open_.size);
-            fread(open_.data, 1, open_.size, fptr);
-            fclose(fptr);
-        }
-        strcpy(open_.buffer,open_.code);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.uid);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.password);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.name);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.start_value);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.timeactive);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.asset_fname);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.size);
-        strcat(open_.buffer," ");
-        strcat(open_.buffer,open_.data);
-        strcat(open_.buffer,"\n");
-        strcpy(send_buffer,open_.buffer);
+            fptr = fopen(open_.asset_fname,"r");
+            if(fptr == NULL)
+                printf("Error opening file\n");
+            else{
+                fseek(fptr, 0, SEEK_END);                         //find size of file
+                open_.size = ftell(fptr);
+                fseek(fptr, 0, SEEK_SET);                         //finds begining of file
+                open_.data = (char*)malloc(open_.size);
+                fread(open_.data, 1, open_.size, fptr);
+                fclose(fptr);
+            }
+            strcpy(open_.buffer,open_.code);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.uid);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.password);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.name);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.start_value);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.timeactive);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.asset_fname);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.size);
+            strcat(open_.buffer," ");
+            strcat(open_.buffer,open_.data);
+            strcat(open_.buffer,"\n");
     }
+    else if(strcmp("close", cmd) == 0){
+        strcpy(send_buffer,"CLS");
+        strcpy(send_buffer," ");
+        strcat(send_buffer,uid);
+        strcat(send_buffer," ");
+        strcat(send_buffer,password);
+        strcat(send_buffer," ");
+        strcat(send_buffer,aid);
+        strcat(send_buffer,"\n");
     }
-
+    
+    strcpy(send_buffer,open_.buffer);
     n = write(fd, send_buffer, len(send_buffer));
     if (n == -1) exit(1);
 
@@ -119,4 +128,3 @@ int main(){
 
     return 0;
 }
-
