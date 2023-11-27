@@ -79,7 +79,7 @@ int main(){
             else{
                 fseek(fptr, 0, SEEK_END);                         //find size of file
                 open_.size = ftell(fptr);
-                fseek(fptr, 0, SEEK_SET);                         //finds begining of file
+                fseek(fptr, 0, SEEK_SET);                         //find begining of file
                 open_.data = (char*)malloc(open_.size);
                 fread(open_.data, 1, open_.size, fptr);
                 fclose(fptr);
@@ -106,11 +106,11 @@ int main(){
     else if(strcmp("close", cmd) == 0){
         strcpy(send_buffer,"CLS");
         strcpy(send_buffer," ");
-        strcat(send_buffer,uid);
+        strcat(send_buffer,uid);   //dados do login
         strcat(send_buffer," ");
-        strcat(send_buffer,password);
+        strcat(send_buffer,password);  //dados do login
         strcat(send_buffer," ");
-        strcat(send_buffer,aid);
+        strcat(send_buffer,aid);       //dados do login
         strcat(send_buffer,"\n");
     }
     
