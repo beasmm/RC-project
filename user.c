@@ -16,7 +16,7 @@
 #define NAME_SIZE 10
 
 typedef struct {                                    //struct with info to open auction
-    int uid,timeactive, size, aid;                       //5 digits
+    int uid,timeactive, size, aid;                       //5 digitss
     char name[NAME_SIZE];
     char password[PASSWORD_SIZE];
     char asset_fname[NAME_SIZE];
