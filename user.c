@@ -59,9 +59,9 @@ int main(){
 
     get_word(cmd);
     while(strcmp(cmd,"exit") != 0){
+        Open_ open_;
+        FILE *fptr;
         if(strcmp(cmd,"open") == 0){                               //open auction
-            Open_ open_;
-            FILE *fptr;
             strcpy(open_.uid,uid);                                //from login
             strcpy(open_.password, password);                     //from login
             get_word(open_.name);
@@ -76,7 +76,6 @@ int main(){
                 fseek(fptr, 0, SEEK_END);                         //find size of file
                 open_.size = ftell(fptr);
                 fseek(fptr, 0, SEEK_SET);                         //find begining of file
-                open_.data = (char*)malloc(open_.size);
                 fread(open_.data, 1, open_.size, fptr);
                 fclose(fptr);
             }
