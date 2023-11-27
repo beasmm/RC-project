@@ -21,7 +21,7 @@ typedef struct {                                    //struct with info to open a
     char password[PASSWORD_SIZE];
     char asset_fname[NAME_SIZE];
     char data[128];
-    float start_value;                              //6 digits
+    char start_value;                              //6 digits
 } Open_;
 
 void get_word(char str[]){
@@ -80,24 +80,24 @@ int main(){
                 fread(open_.data, 1, open_.size, fptr);
                 fclose(fptr);
             }
-            strcpy(open_.buffer,"OPA");
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.uid);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.password);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.name);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.start_value);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.timeactive);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.asset_fname);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.size);
-            strcat(open_.buffer," ");
-            strcat(open_.buffer,open_.data);
-            strcat(open_.buffer,"\n");
+            strcpy(send_buffer,"OPA");
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.uid);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.password);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.name);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.start_value);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.timeactive);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.asset_fname);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.size);
+            strcat(send_buffer," ");
+            strcat(send_buffer,open_.data);
+            strcat(send_buffer,"\n");
     }
     else if(strcmp("close", cmd) == 0){
         get_word(open_.aid);
@@ -132,7 +132,7 @@ int main(){
         strcat(send_buffer,"\n");        
     }
     
-    strcpy(send_buffer,open_.buffer);
+    strcpy(send_buffer,send_buffer);
     n = write(fd, send_buffer, len(send_buffer));
     if (n == -1) exit(1);
 
