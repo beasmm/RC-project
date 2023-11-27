@@ -16,9 +16,7 @@
 #define NAME_SIZE 10
 
 typedef struct {                                    //struct with info to open auction
-    char code[MAX_CMD_SIZE];
-    char cmd[MAX_CMD_SIZE];
-    int uid,timeactive, size;                       //5 digits
+    int uid,timeactive, size, aid;                       //5 digits
     char name[NAME_SIZE];
     char password[PASSWORD_SIZE];
     char asset_fname[NAME_SIZE];
@@ -64,8 +62,6 @@ int main(){
         if(strcmp(cmd,"open") == 0){                               //open auction
             Open_ open_;
             FILE *fptr;
-            strcpy(open_.cmd, cmd);
-            strcpy(open_.code, "OPA");
             strcpy(open_.uid,uid);                                //from login
             strcpy(open_.password, password);                     //from login
             get_word(open_.name);
@@ -84,7 +80,7 @@ int main(){
                 fread(open_.data, 1, open_.size, fptr);
                 fclose(fptr);
             }
-            strcpy(open_.buffer,open_.code);
+            strcpy(open_.buffer,"OPA");
             strcat(open_.buffer," ");
             strcat(open_.buffer,open_.uid);
             strcat(open_.buffer," ");
@@ -104,14 +100,36 @@ int main(){
             strcat(open_.buffer,"\n");
     }
     else if(strcmp("close", cmd) == 0){
+        get_word(open_.aid);
         strcpy(send_buffer,"CLS");
         strcpy(send_buffer," ");
-        strcat(send_buffer,uid);   //dados do login
+        strcat(send_buffer,open_.uid);   
         strcat(send_buffer," ");
-        strcat(send_buffer,password);  //dados do login
+        strcat(send_buffer,open_.password); 
         strcat(send_buffer," ");
-        strcat(send_buffer,aid);       //dados do login
+        strcat(send_buffer,open_.aid);       
         strcat(send_buffer,"\n");
+    }
+    else if(strcmp("show_asset", cmd) == 0 || strcmp("sa", cmd) == 0){
+        get_word(open_.aid);
+        strcpy(send_buffer,"SAS");
+        strcat(send_buffer," ");
+        strcat(send_buffer,open_.aid);    
+        strcat(send_buffer,"\n");
+    }
+    else if(strcmp("bid", cmd) == 0 || strcmp("b", cmd) == 0){
+        get_word(open_.aid);
+        get_word(open_.start_value);
+        strcpy(send_buffer,"BID");
+        strcat(send_buffer," ");
+        strcat(send_buffer,open_.uid); 
+        strcat(send_buffer," ");    
+        strcat(send_buffer,open_.password);
+        strcat(send_buffer," ");
+        strcat(send_buffer,open_.aid);  
+        strcat(send_buffer," ");
+        strcat(send_buffer,open_.start_value);  
+        strcat(send_buffer,"\n");        
     }
     
     strcpy(send_buffer,open_.buffer);
@@ -121,7 +139,7 @@ int main(){
     n=read(fd, receive_buffer, 128);
     if (n == -1) exit(1);
 
-    write(1, "answer: ", 8); write(1, send_buffer, len(receive_buffer));
+    write(1, "answer: ", 8); write(1, receive_buffer, len(receive_buffer));
 
     freeaddrinfo(res);
     close(fd);
