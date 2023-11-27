@@ -140,7 +140,7 @@ int main(){
     if (n == -1) exit(1);
 
     write(1, "answer: ", 8); write(1, receive_buffer, len(receive_buffer));
-
+    }
     freeaddrinfo(res);
     close(fd);
 
