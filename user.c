@@ -13,6 +13,8 @@
 #define MAX_CMD_SIZE 7
 #define UID_SIZE 7
 #define PASSWORD_SIZE 9
+#define FNAME 24
+#define FSIZE 8
 
 int fd, errcode;
 ssize_t n;
@@ -28,10 +30,10 @@ typedef struct{
 
 typedef struct {      
     char name[15];
-    char asset_fname[15];
+    char asset_fname[FNAME];
     char start_value[15];
     char timeactive[15];
-    char size[15];
+    char size[FSIZE];
     char data[128];
     char aid[15];
     char value[15];
@@ -44,21 +46,22 @@ int main(){
     FILE *fptr;
     int open_state;
     int login_state;
-    fd = socket(AF_INET, SOCK_STREAM,0);
-    if (fd==-1) exit(1);
-
-    memset(&hints,0,sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype=SOCK_STREAM;
-
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
-    if(errcode!=0) exit(1);
-
-    n=connect(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1) exit(1);
 
     scanf("%s", cmd);
     while(strcmp("exit",cmd)!=0){
+
+        fd = socket(AF_INET, SOCK_STREAM,0);
+        if (fd==-1) exit(1);
+        memset(&hints,0,sizeof hints);
+        hints.ai_family = AF_INET;
+        hints.ai_socktype=SOCK_STREAM;
+
+        errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
+        if(errcode!=0) exit(1);
+
+        n=connect(fd,res->ai_addr,res->ai_addrlen);
+        if(n==-1) exit(1);
+
         char buffer[128];
         char buffer_to_send[128];
         if (strcmp("open",cmd)==0){
@@ -106,6 +109,7 @@ int main(){
             if(n==-1) exit(1);
 
             write(1,"echo: ",6); write(1,buffer,n);
+            
             freeaddrinfo(res);
             close(fd);
             open_state = 0;
