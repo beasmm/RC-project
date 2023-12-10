@@ -35,7 +35,7 @@ typedef struct {
     char timeactive[15];
     char size[FSIZE];
     char data[128];
-    char aid[15];
+    char aid[3];
     char value[15];
     User_ user;
 } Open_;
@@ -46,8 +46,13 @@ int main(){
     FILE *fptr;
     int open_state;
     int login_state;
+    char code[3];
+    char status[3];
+    char aid[3];
 
+    printf("Introduce action code: ");
     scanf("%s", cmd);
+
     while(strcmp("exit",cmd)!=0){
 
         fd = socket(AF_INET, SOCK_STREAM,0);
@@ -109,11 +114,18 @@ int main(){
             if(n==-1) exit(1);
 
             write(1,"echo: ",6); write(1,buffer,n);
-            
+            memcpy(code,&buffer[0],3);
+            status[3] = '\0';
+            memcpy(status,&buffer[4],7);
+            status[3] = '\0';
+            if(strcmp(status,"NLG")==0){
+                printf("User not logged in\n");
+            }
             freeaddrinfo(res);
             close(fd);
             open_state = 0;
-            scanf("%s",cmd);
+            printf("Introduce action code: ");
+            scanf("%s", cmd);
         }
         else if(strcmp("close",cmd)==0){ //cancelling the sale, or if the auction time had already ended
             if(open_state==0){
@@ -133,14 +145,39 @@ int main(){
                 if(n==-1) exit(1);
 
                 write(1,"echo: ",6); write(1,buffer,n);
+
+                memcpy(code,&buffer[0],3);
+                code[4] = '\0';
+                memcpy(status,&buffer[4],7);
+                status[3] = '\0';
+            
+                if (strcmp(status,"EAU")==0){
+                    printf("Auction %s does not exist\n", open.aid);
+                }
+                else if(strcmp(status,"NLG")==0){
+                    printf("User not logged in\n");
+                }
+                else if(strcmp(status,"EOW")==0){
+                    printf("Auction %s is not owned by user %s\n",open.aid,open.user.uid);
+                }
+                else if(strcmp(status,"END")==0){
+                    printf("Auction %s owned by user %s has already finished\n", open.aid,open.user.uid);
+                }
+                else if(strcmp(status,"ERR")==0){
+                    printf("Error\n");
+                }
+                else{
+                    printf("Auction %s closed\n", open.aid);
+                }
+
                 freeaddrinfo(res);
                 close(fd);
-                scanf("%s",cmd);
             }
             else{
                 printf("Use open before close\n");
-                scanf("%s",cmd);
             }
+            printf("Introduce action code: ");
+            scanf("%s", cmd);
         }
         else if(strcmp(cmd,"show_asset")==0 || strcmp(cmd,"sa")==0){
             scanf("%s",open.aid);
@@ -156,9 +193,30 @@ int main(){
             if(n==-1) exit(1);
 
             write(1,"echo: ",6); write(1,buffer,n);
+
+            memcpy(code,&buffer[0],3);
+            code[4] = '\0';
+            memcpy(status,&buffer[4],7);
+            status[3] = '\0';
+
+            if (strcmp(status,"NOK")==0){
+                printf("Auction could not be started\n");
+            }
+            else if(strcmp(status,"NLG")==0){
+                printf("User not logged in\n");
+            }
+            else if(strcmp(status,"ERR")==0){
+                printf("Error\n");
+            }
+            else{
+                memcpy(aid,&buffer[7],10);
+                aid[3] = '\0';
+                printf("Auction number %s started\n", open.aid);   //FALTA PARTE
+            }
             freeaddrinfo(res);
             close(fd);
-            scanf("%s",cmd);
+            printf("Introduce action code: ");
+            scanf("%s", cmd);
         }
         else if(strcmp(cmd,"bid")==0 || strcmp(cmd,"b")){
             scanf("%s",open.aid);
@@ -182,10 +240,35 @@ int main(){
 
             write(1,"echo: ",6); write(1,buffer,n);
 
+            memcpy(code,&buffer[0],3);
+            code[4] = '\0';
+            memcpy(status,&buffer[4],7);
+            status[3] = '\0';
+
+            if (strcmp(status,"NOK")==0){
+                printf("Auction %s is not active\n",open.aid);
+            }
+            else if(strcmp(status,"NLG")==0){
+                printf("User not logged in\n");
+            }
+            else if(strcmp(status,"ACC")==0){
+                printf("Bid was accepted\n");
+            }
+            else if(strcmp(status,"REF")==0){
+                printf("Bid refused - larger bid was already been placed\n");
+            }
+            else if(strcmp(status,"ILG")==0){
+                printf("User tried to bid in auction hosted by himself\n");
+            }
+            else if(strcmp(status,"ERR")==0){
+                printf("Error\n");
+            }
+
             freeaddrinfo(res);
             close(fd);
 
-            scanf("%s",cmd);
+            printf("Introduce action code: ");
+            scanf("%s", cmd);
         }
     }
     return 0;
