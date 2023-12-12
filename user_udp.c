@@ -16,25 +16,29 @@
 User user;
 
 
-void get_word(char str[]){
+int get_word(char str[], int is_id){
     char c = getchar();
 	int i = 0;
 	while (c == ' ')
 		c = getchar();
 	while (c != ' ' && c != '\n') {
+        if (is_id && (c < '0' || c > '9')) {
+            printf("invalid uid\n");
+            return -1;
+        }
 		str[i++] = c;
 		c = getchar();
 	}
 	str[i] = '\0';
-	return;
-}
-
-
-int login(){
-    get_word(user.uid);
-    get_word(user.password);
-    //TODO: verify arguments
-    return 0;
+    if (is_id && strlen(str) != UID_SIZE) {
+        printf("invalid uid size\n");
+        return -1;
+    }
+    if (!is_id && strlen(str) != PASSWORD_SIZE) {
+        printf("iinvalid password size\n");
+        return -1;
+    }
+	return 0;
 }
 
 
@@ -190,7 +194,10 @@ int main(){
 
         if(strcmp("login", cmd) == 0){
             case_id = CASE_LOGIN;
-            login();
+            if (get_word(user.uid, 1) == -1) 
+                continue;
+            if (get_word(user.password, 0) == -1) 
+                continue;
             get_message(case_id, command);
         }
         
