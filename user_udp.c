@@ -9,24 +9,8 @@
 #include <netdb.h>
 #define PORT "58011"
 
-#define CODE_SIZE 4
-#define MAX_CMD_SIZE 11
-#define UID_SIZE 7
-#define PASSWORD_SIZE 9
 
-#define CASE_LOGIN 0
-#define CASE_LOGOUT 1
-#define CASE_UNREGISTER 2
-#define CASE_MYAUCTIONS 3
-#define CASE_MYBIDS 4
-#define CASE_SHOW_RECORD 5
-#define CASE_LIST 6
-
-typedef struct {
-    char uid[UID_SIZE];
-    char password[PASSWORD_SIZE];
-    int logged_in;
-} User;
+#include "constants_udp.h"
 
 //global variables
 User user;
@@ -73,20 +57,49 @@ void get_message(int case_id, char str[]){
 }
 
 
-int get_output(int case_id, char cmd[], char status[]){
-    printf("status: %s\n", status);
-    if (strcmp("ERR", status) == 0) {
+
+void print_auctions(char str[]){
+    char aid[4];
+    int i = 7, j = 0;
+
+    //while(str[i] != '\n' && str[i] != '\0') {
+    while(str[i] != '\0' && str[i] != '\n') {
+        while (j < 3) {
+            aid[j++] = str[i++];
+            if (str[i] < '0' || str[i] > '9') break;
+        }
+
+        if (str[i] != ' ' && (str[i] < '0' || str[i] > '9')) break;
+
+        aid[j] = '\0';
+        i++;
+
+        printf("id: %s --> ", aid);
+
+        if (str[i] == '0') printf("state: inactive\n");
+        else if (str[i] == '1') printf("state: active\n");
+        j = 0;
+        i += 2;
+    }
+    printf("\n");
+
+    return;
+}
+
+
+int get_output(int case_id, char cmd[], char reply[]){
+    if (strcmp("ERR", reply) == 0) {
         printf("server error\n");
         return 0;
     }
     //case login: change logged_in to 1
     if (case_id == CASE_LOGIN) {
-        if (strcmp("OK", status) == 0) {
+        if (strcmp("OK", reply) == 0) {
             printf("successful %s\n", cmd);
             user.logged_in = 1;
             return 0;
         }
-        else if (strcmp("NOK", status) == 0) {
+        else if (strcmp("NOK", reply) == 0) {
             printf("incorrect login attempt\n");
             return 0;
         }
@@ -98,17 +111,17 @@ int get_output(int case_id, char cmd[], char status[]){
     }
     //cases logout and unregister
     else if (case_id == CASE_LOGOUT || case_id == CASE_UNREGISTER) {
-        if (strcmp("OK", status) == 0) {
+        if (strcmp("OK", reply) == 0) {
             printf("successful %s\n", cmd);
             if (case_id == CASE_LOGOUT) user.logged_in = 0; //logout
             return 0;
         }
-        else if (strcmp("UNR", status) == 0) {
+        else if (strcmp("UNR", reply) == 0) {
             printf("unknow user\n");
             return 0;
         }
         //logout 
-        else if (case_id == CASE_LOGOUT) {
+        else if (case_id == CASE_LOGOUT && strcmp("NOK", reply) == 0) {
             printf("user not logged in\n");
             return 0;
         }
@@ -120,53 +133,29 @@ int get_output(int case_id, char cmd[], char status[]){
     }
     //cases myauctions and mybids
     else if (case_id == CASE_MYAUCTIONS || case_id == CASE_MYBIDS) {
-        if (strcmp("NLG", status) == 0) {
+        if (strcmp("NLG", reply) == 0) {
             printf("user not logged in\n");
             return 0;
         }
-        else if (strcmp("NOK", status) == 0) {
+        else if (strcmp("NOK", reply) == 0) {
             printf("user has no ongoing bids\n");
             return 0;
         }
         else return 1;
     }
-    // case LIST
-    else {
-        if (strcmp("NOK", status) == 0) {
+
+    //case list
+    else if (case_id == CASE_LIST) {
+        if (strcmp("NOK", reply) == 0) {
             printf("no auction started yet\n");
             return 0;
         }
+        else {
+            printf("auctions:\n");
+            return 2;
+        }
     }
     return 0;
-}
-
-
-void print_auctions(char str[], int offset){
-    char aid[3];
-    int i = offset, j = 0;
-    while(str[i] != '\n') {
-        while (j < 3) {
-            aid[j++] = str[i++];
-            continue;
-        }
-
-        if (j == 4) {
-            printf("auction_id: %s: ", aid);
-            j++;
-            i++;
-        }
-        else if (j == 5) {
-            if (str[i] == 'O') printf(" inactive\t");
-            else if (str[i] == '1') printf(" active\t");
-            j = 0;
-            i += 2;
-        }
-        if (str[i] == '\n') {
-            printf("\n");
-            return;
-        }
-    }
-    return;
 }
 
 
@@ -181,7 +170,7 @@ int main(){
     //char output[128];
 
     int case_id;
-    char cmd[MAX_CMD_SIZE], status[CODE_SIZE];
+    char cmd[MAX_CMD_SIZE], reply[128];
     char command[CODE_SIZE + UID_SIZE + PASSWORD_SIZE];
 
     fd=socket(AF_INET,SOCK_DGRAM,0); //UDP socket
@@ -247,44 +236,30 @@ int main(){
             printf("Invalid command\n");
             continue;
         }
-
-        printf("message: %s", command);
-
-        printf("command length: %ld\n", strlen(command));
         
         n=sendto(fd, command, strlen(command), 0, res->ai_addr, res->ai_addrlen);
         if(n==-1) /*error*/ exit(1);
-        
-        addrlen=sizeof(addr);
-        n=recvfrom(fd,buffer,128,0,
-            (struct sockaddr*)&addr,&addrlen);
+
+        addrlen = sizeof(addr);
+        n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
         if(n==-1) /*error*/ exit(1);
 
-        printf("buffer: %s", buffer);
-
         for (int i = 0; buffer[i + CODE_SIZE] != '\n'; i++) {
-            //if (buffer[i + CODE_SIZE] != ' ') break;
-            status[i] = buffer[i + CODE_SIZE];
+            reply[i] = buffer[i + CODE_SIZE];
+            if (i > 1 && buffer[i + CODE_SIZE]) break;
         }
 
-
-        if (get_output(case_id, cmd, status)) printf("slay\n");
-            //print_auctions(buffer, CODE_SIZE + strlen(status));
-
-        printf("status: %s\n", status);
+        if (get_output(case_id, cmd, reply) == 2 && case_id == CASE_LIST) 
+            print_auctions(buffer);
 
         write(1,"answer: ",8); write(1, buffer, n);
         
-        //empty command and status
+        //empty command and reply
         memset(command, 0, sizeof(command));
-        memset(status, 0, sizeof(status));
+        memset(reply, 0, sizeof(reply));
 
     }
     freeaddrinfo(res);
     close(fd);
     return 0;
 }
-
-// RLI OK
-
-//hbdjenek
