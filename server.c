@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
-#define PORT "58000"
+#define PORT "58011"
 
 int fd, newfd, errcode;
 ssize_t n;
@@ -18,31 +18,25 @@ struct sockaddr_in addr;
 char buffer[128];
 
 int main(){
-    printf("1\n");
+
     fd = socket(AF_INET,SOCK_STREAM,0);
     if(fd == -1) exit(1);
 
-    printf("2\n");
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;
     hints.ai_socktype=SOCK_STREAM;
     hints.ai_flags=AI_PASSIVE;
 
-    printf("3\n");
     errcode=getaddrinfo(NULL,PORT,&hints,&res);
     if((errcode)!=0) exit(1);
 
-    printf("4\n");
     n=bind(fd,res->ai_addr,res->ai_addrlen);
-    printf("Aqui\n");
     if(n==-1){
         perror("bind");
         exit(1);
     }
 
-    printf("5\n");
     if(listen(fd,5)==-1) exit(1);
-
     while(1){
         addrlen=sizeof(addr);
         if((newfd=accept(fd,(struct sockaddr*) &addr, &addrlen))==-1) exit(1);
