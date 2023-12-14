@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
-#define PORT "58011"
+#define PORT "58000"
 
 #define MAX_CMD_SIZE 7
 #define UID_SIZE 7
@@ -62,10 +62,14 @@ int main(){
         hints.ai_socktype=SOCK_STREAM;
 
         errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
+        printf("1\n");
         if(errcode!=0) exit(1);
 
+        printf("2\n");
         n=connect(fd,res->ai_addr,res->ai_addrlen);
         if(n==-1) exit(1);
+
+        printf("3\n");
 
         char buffer[128];
         char buffer_to_send[128];
