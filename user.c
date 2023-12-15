@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #define PORT "58011"
 
 #define MAX_CMD_SIZE 7
@@ -49,6 +50,12 @@ int main(){
     char code[3];
     char status[3];
     char aid[3];
+    struct sigaction act;
+
+    memset(&act,0,sizeof act);
+    act.sa_handler=SIG_IGN;
+
+    if(sigaction(SIGPIPE,&act,NULL)==-1) exit(-1);
 
     printf("Introduce action code: ");
     scanf("%s", cmd);

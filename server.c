@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -8,46 +9,44 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
-#define PORT "58011"
-
-int fd, newfd, errcode;
-ssize_t n;
-socklen_t addrlen;
-struct addrinfo hints, *res;
-struct sockaddr_in addr;
-char buffer[128];
+#include <signal.h>
+#define PORT "58001"
 
 int main(){
+    struct addrinfo hints,*res;
+    int fd,newfd,errcode; 
+    struct sockaddr_in addr; 
+    char *ptr,buffer[128];
+    ssize_t n,nw;
+    socklen_t addrlen;
+    struct sigaction act;
+    
+    memset(&act,0,sizeof act);
+    act.sa_handler=SIG_IGN;
+    if(sigaction(SIGPIPE,&act,NULL)==-1)/*error*/exit(1);
 
-    fd = socket(AF_INET,SOCK_STREAM,0);
-    if(fd == -1) exit(1);
 
+    if((fd=socket(AF_INET,SOCK_STREAM,0))==-1)exit(1);
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;
     hints.ai_socktype=SOCK_STREAM;
     hints.ai_flags=AI_PASSIVE;
-
-    errcode=getaddrinfo(NULL,PORT,&hints,&res);
-    if((errcode)!=0) exit(1);
-
-    n=bind(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1){
-        perror("bind");
+    if((errcode=getaddrinfo(NULL,PORT,&hints,&res))!=0)/*error*/exit(1);
+    if(bind(fd,res->ai_addr,res->ai_addrlen)==-1)/*error*/{
+        perror("Bind error");
         exit(1);
     }
+    if(listen(fd,5)==-1)/*error*/exit(1);
 
-    if(listen(fd,5)==-1) exit(1);
-    while(1){
-        addrlen=sizeof(addr);
-        if((newfd=accept(fd,(struct sockaddr*) &addr, &addrlen))==-1) exit(1);
-        printf("connected\n");
-        n=read(newfd,buffer,128);
-        if(n==-1) exit(1);
-        write(1,"received: ",10); write(1,buffer,n);
-
-        n=write(newfd,buffer,n);
-        if(n==-1) exit(1);
-
+    while(1){addrlen=sizeof(addr);
+        if((newfd=accept(fd,(struct sockaddr*)&addr,&addrlen))==-1) exit(1);
+        while((n=read(newfd,buffer,128))!=0){if(n==-1)/*error*/exit(1);
+            ptr=&buffer[0];
+            while(n>0){if((nw=write(newfd,ptr,n))<=0)/*error*/exit(1);
+                n-=nw; 
+                ptr+=nw;
+            }
+        }
         close(newfd);
     }
     freeaddrinfo(res);
