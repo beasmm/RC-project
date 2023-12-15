@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#define PORT "58011"
+#define PORT "59000"
 
 #define MAX_CMD_SIZE 7
 #define UID_SIZE 7
