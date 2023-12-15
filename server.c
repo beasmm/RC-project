@@ -12,14 +12,19 @@
 #include <signal.h>
 #define PORT "58011"
 
+#include "constants_udp.h"
+
 int main(){
     struct addrinfo hints,*res;
     int fd,newfd,errcode; 
     struct sockaddr_in addr; 
-    char *ptr,buffer[128]={0};
+    char *ptr,buffer[128]={0}, buffer_to_send[128]={0};
     ssize_t n,nw;
     socklen_t addrlen;
     struct sigaction act;
+    Auction *ptr_action1;
+    Auction *ptr_action2;
+    User user;    
 
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
@@ -47,15 +52,32 @@ int main(){
     printf("Listening...\n");
 
     while(1){
+        char code[3]={0};
+        char status[3]={0};
         addrlen=sizeof(addr);
         if((newfd=accept(fd,(struct sockaddr*)&addr,&addrlen))==-1) exit(1);
         while((n=read(newfd,buffer,128))!=0){if(n==-1)/*error*/exit(1);
-            ptr=&buffer[0];
-            printf("%s\n",ptr);
-            while(n>0){
-                if((nw=write(newfd,ptr,n))<=0)/*error*/break;
-                n-=1; 
-                ptr+=1;
+            printf("Receiving: %s\n",buffer);
+            memcpy(code,buffer,3*sizeof(char));
+            if(strcmp(code,"OPA")==0){
+                sprintf(buffer_to_send,"ROA STATUS AID\n");        //FALTA STATUS E AID
+                n=write(newfd,buffer_to_send,128);
+                if(n==-1) exit(1);
+            }
+            else if(strcmp(code,"CLS")==0){
+                sprintf(buffer_to_send,"RCL STATUS\n");        //FALTA STATUS
+                n=write(newfd,buffer_to_send,128);
+                if(n==-1) exit(1);
+            }
+            else if(strcmp(code,"SAS")==0){
+                sprintf(buffer_to_send,"RSA STATUS []\n");        //FALTA STATUS E mais coisas
+                n=write(newfd,buffer_to_send,128);
+                if(n==-1) exit(1);
+            }
+            else if(strcmp(code,"BID")==0){
+                sprintf(buffer_to_send,"RBD STATUS\n");        //FALTA STATUS
+                n=write(newfd,buffer_to_send,128);
+                if(n==-1) exit(1);
             }
         }
         close(newfd);

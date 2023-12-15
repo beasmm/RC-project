@@ -33,9 +33,9 @@ typedef struct {
     char name[15];
     char asset_fname[FNAME];
     char start_value[15];
-    char timeactive[15];
+    char timeactive[5];
     char size[FSIZE];
-    char data[128];
+    char data[15];
     char aid[3];
     char value[15];
     User_ user;
@@ -79,14 +79,13 @@ int main(){
         if (strcmp("open",cmd)==0){
             strcpy(open.user.uid,"103029");
             strcpy(open.user.password,"123456AA");
-            scanf("%s",open.name);
-            scanf("%s",open.asset_fname);
-            scanf("%s",open.start_value);
-            scanf("%s",open.timeactive);
+            scanf("%s %s %s %s",open.name,open.asset_fname,open.start_value,open.timeactive);
 
             fptr = fopen(open.asset_fname,"r");
-            if(fptr == NULL)
-                printf("Error opening file\n");
+            if(fptr == NULL){
+                printf("Error opening file\n");                    //??
+                exit(1);
+            }
             else{
                 fseek(fptr, 0, SEEK_END);                         //find size of file
                 sprintf(open.size,"%ld",ftell(fptr)+1);
@@ -95,35 +94,19 @@ int main(){
                 fread(open.data, size, 1,fptr);
                 fclose(fptr);
             }
-
-            strcpy(buffer_to_send,"OPA");
-            strcat(buffer_to_send,open.user.uid);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send,open.user.password);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.name);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.start_value);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.timeactive);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.asset_fname);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.size);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.data);
-            strcat(buffer_to_send, "\n");
+            sprintf(buffer_to_send,"OPA %s %s %s %s %s %s %s %s\n",open.user.uid,open.user.password,open.name,open.start_value,open.timeactive,open.asset_fname,open.size,open.data);
 
             n=write(fd,buffer_to_send,128);
             if(n==-1) exit(1);
-
+            
             n=read(fd,buffer,128);
             if(n==-1) exit(1);
-
+            
             write(1,"echo: ",6); write(1,buffer,n);
-            memcpy(code,&buffer[0],3);
+            memcpy(code,&buffer[0],3*sizeof(char));
             status[3] = '\0';
-            memcpy(status,&buffer[4],7);
+
+            memcpy(status,&buffer[4],3*sizeof(char));
             status[3] = '\0';
             if(strcmp(status,"NLG")==0){
                 printf("User not logged in\n");
@@ -137,14 +120,8 @@ int main(){
         else if(strcmp("close",cmd)==0){ //cancelling the sale, or if the auction time had already ended
             if(open_state==0){
                 scanf("%s",open.aid);
-                strcpy(buffer_to_send,"CLS");
-                strcat(buffer_to_send, " ");
-                strcat(buffer_to_send, open.user.uid);
-                strcat(buffer_to_send, " ");
-                strcat(buffer_to_send, open.user.password);
-                strcat(buffer_to_send, " ");
-                strcat(buffer_to_send, open.aid);
-                strcat(buffer_to_send, "\n");
+                sprintf(buffer_to_send,"CLS %s %s %s\n",open.user.uid,open.user.password,open.aid);
+                
                 n=write(fd,buffer_to_send,128);
                 if(n==-1) exit(1);
 
@@ -153,9 +130,10 @@ int main(){
 
                 write(1,"echo: ",6); write(1,buffer,n);
 
-                memcpy(code,&buffer[0],3);
-                code[4] = '\0';
-                memcpy(status,&buffer[4],7);
+                memcpy(code,&buffer[0],3*sizeof(char));
+                code[3] = '\0';
+
+                memcpy(status,&buffer[4],3*sizeof(char));
                 status[3] = '\0';
             
                 if (strcmp(status,"EAU")==0){
@@ -181,17 +159,14 @@ int main(){
                 close(fd);
             }
             else{
-                printf("Use open before close\n");
+                printf("Can't find auction to close\n");
             }
             printf("Introduce action code: ");
             scanf("%s", cmd);
         }
         else if(strcmp(cmd,"show_asset")==0 || strcmp(cmd,"sa")==0){
             scanf("%s",open.aid);
-            strcpy(buffer_to_send,"SAS");
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send,open.aid);
-            //strcat(buffer_to_send,"\n");
+            sprintf(buffer_to_send,"SAS %s\n",open.aid);
 
             n=write(fd,buffer_to_send,128);
             if(n==-1) exit(1);
@@ -225,19 +200,10 @@ int main(){
             printf("Introduce action code: ");
             scanf("%s", cmd);
         }
-        else if(strcmp(cmd,"bid")==0 || strcmp(cmd,"b")){
+        else if(strcmp(cmd,"bid")==0 || strcmp(cmd,"b")==0){
             scanf("%s",open.aid);
             scanf("%s",open.value);
-            strcpy(buffer_to_send,"BID");
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.user.uid);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.user.password);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.aid);
-            strcat(buffer_to_send, " ");
-            strcat(buffer_to_send, open.value);
-            strcat(buffer_to_send, "\n");
+            sprintf(buffer_to_send,"BID %s %s %s %s\n",open.user.uid,open.user.password,open.aid,open.value);
 
             n=write(fd,buffer_to_send,128);
             if(n==-1) exit(1);

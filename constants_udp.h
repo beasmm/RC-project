@@ -11,8 +11,24 @@
 #define CASE_SHOW_RECORD 5
 #define CASE_LIST 6
 
+#define FNAME 24
+#define FSIZE 8
+
+typedef struct{
+    char name[15];
+    char asset_fname[FNAME];
+    int start_value;
+    int timeactive;
+    size_t size[FSIZE];
+    char data[15];
+    int aid;
+    int higher_value;
+
+} Auction;
+
 typedef struct User{
     char uid[UID_SIZE];
     char password[PASSWORD_SIZE];
     int logged_in;
+    Auction auction[1000];
 }User;
