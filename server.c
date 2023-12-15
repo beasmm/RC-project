@@ -10,13 +10,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#define PORT "59000"
+#define PORT "58011"
 
 int main(){
     struct addrinfo hints,*res;
     int fd,newfd,errcode; 
     struct sockaddr_in addr; 
-    char *ptr,buffer[128];
+    char *ptr,buffer[128]={0};
     ssize_t n,nw;
     socklen_t addrlen;
     struct sigaction act;
@@ -46,13 +46,16 @@ int main(){
     if(listen(fd,5)==-1)/*error*/exit(1);
     printf("Listening...\n");
 
-    while(1){addrlen=sizeof(addr);
+    while(1){
+        addrlen=sizeof(addr);
         if((newfd=accept(fd,(struct sockaddr*)&addr,&addrlen))==-1) exit(1);
         while((n=read(newfd,buffer,128))!=0){if(n==-1)/*error*/exit(1);
             ptr=&buffer[0];
-            while(n>0){if((nw=write(newfd,ptr,n))<=0)/*error*/exit(1);
-                n-=nw; 
-                ptr+=nw;
+            printf("%s\n",ptr);
+            while(n>0){
+                if((nw=write(newfd,ptr,n))<=0)/*error*/break;
+                n-=1; 
+                ptr+=1;
             }
         }
         close(newfd);

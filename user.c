@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#define PORT "59000"
+#define PORT "58011"
 
 #define MAX_CMD_SIZE 7
 #define UID_SIZE 7
@@ -22,7 +22,7 @@ ssize_t n;
 socklen_t addrlen;
 struct addrinfo hints, *res;
 struct sockaddr_in addr;
-char cmd[MAX_CMD_SIZE];
+char cmd[MAX_CMD_SIZE]={0};
 
 typedef struct{
     char uid[UID_SIZE];
@@ -47,9 +47,9 @@ int main(){
     FILE *fptr;
     int open_state;
     int login_state;
-    char code[3];
-    char status[3];
-    char aid[3];
+    char code[3]={0};
+    char status[3]={0};
+    char aid[3]={0};
     struct sigaction act;
 
     memset(&act,0,sizeof act);
@@ -61,22 +61,21 @@ int main(){
     scanf("%s", cmd);
 
     while(strcmp("exit",cmd)!=0){
-
         fd = socket(AF_INET, SOCK_STREAM,0);
         if (fd==-1) exit(1);
         memset(&hints,0,sizeof hints);
         hints.ai_family = AF_INET;
         hints.ai_socktype=SOCK_STREAM;
 
-        errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
+        errcode=getaddrinfo("127.0.0.1",PORT,&hints,&res);
         if(errcode!=0) exit(1);
 
         n=connect(fd,res->ai_addr,res->ai_addrlen);
         if(n==-1) exit(1);
 
 
-        char buffer[128];
-        char buffer_to_send[128];
+        char buffer[128]={0};
+        char buffer_to_send[128]={0};
         if (strcmp("open",cmd)==0){
             strcpy(open.user.uid,"103029");
             strcpy(open.user.password,"123456AA");
@@ -192,7 +191,7 @@ int main(){
             strcpy(buffer_to_send,"SAS");
             strcat(buffer_to_send, " ");
             strcat(buffer_to_send,open.aid);
-            strcat(buffer_to_send,"\n");
+            //strcat(buffer_to_send,"\n");
 
             n=write(fd,buffer_to_send,128);
             if(n==-1) exit(1);
@@ -200,7 +199,7 @@ int main(){
             n=read(fd,buffer,128);
             if(n==-1) exit(1);
 
-            write(1,"echo: ",6); write(1,buffer,n);
+            write(1,"echo: ",6); write(1,buffer,n);printf("\n");
 
             memcpy(code,&buffer[0],3);
             code[4] = '\0';
