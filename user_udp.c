@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+//#define PORT "58011"
+
 #define PORT "58011"
 
 
@@ -22,7 +24,7 @@ int get_word(char str[], int is_id){
 	while (c == ' ')
 		c = getchar();
 	while (c != ' ' && c != '\n') {
-        if (is_id && (c < '0' || c > '9')) {
+        if (is_id == 1 && (c < '0' || c > '9')) {
             printf("invalid uid\n");
             return -1;
         }
@@ -30,14 +32,16 @@ int get_word(char str[], int is_id){
 		c = getchar();
 	}
 	str[i] = '\0';
-    if (is_id && strlen(str) != UID_SIZE) {
-        printf("invalid uid size\n");
-        return -1;
-    }
-    if (!is_id && strlen(str) != PASSWORD_SIZE) {
-        printf("iinvalid password size\n");
-        return -1;
-    }
+    /*
+        if (is_id == 1 && strlen(str) != UID_SIZE + 1) {
+            printf("invalid uid size\n");
+            return -1;
+        }
+        if (is_id == 0 && strlen(str) != PASSWORD_SIZE + 1) {
+            printf("iinvalid password size\n");
+            return -1;
+        }
+    */
 	return 0;
 }
 
@@ -184,13 +188,13 @@ int main(){
     hints.ai_family=AF_INET; //IPv4
     hints.ai_socktype=SOCK_DGRAM; //UDP socket
     
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
+    errcode=getaddrinfo("localhost",PORT,&hints,&res);
     if(errcode!=0) /*error*/ exit(1);
 
     //scanf("%s %s %s", cmd, uid, password);
 
     while(1){
-        get_word(cmd);
+        get_word(cmd, -1);
 
         if(strcmp("login", cmd) == 0){
             case_id = CASE_LOGIN;
