@@ -73,12 +73,12 @@ int main(){
         n=connect(fd,res->ai_addr,res->ai_addrlen);
         if(n==-1) exit(1);
 
+        strcpy(open.user.uid,"103029");
+        strcpy(open.user.password,"123456AA");
 
         char buffer[128]={0};
         char buffer_to_send[128]={0};
         if (strcmp("open",cmd)==0){
-            strcpy(open.user.uid,"103029");
-            strcpy(open.user.password,"123456AA");
             scanf("%s %s %s %s",open.name,open.asset_fname,open.start_value,open.timeactive);
 
             fptr = fopen(open.asset_fname,"r");
@@ -160,6 +160,7 @@ int main(){
             }
             else{
                 printf("Can't find auction to close\n");
+                scanf("%s", cmd);
             }
             printf("Introduce action code: ");
             scanf("%s", cmd);
@@ -176,9 +177,9 @@ int main(){
 
             write(1,"echo: ",6); write(1,buffer,n);printf("\n");
 
-            memcpy(code,&buffer[0],3);
-            code[4] = '\0';
-            memcpy(status,&buffer[4],7);
+            memcpy(code,&buffer[0],3*sizeof(char));
+            code[3] = '\0';
+            memcpy(status,&buffer[4],3*sizeof(char));
             status[3] = '\0';
 
             if (strcmp(status,"NOK")==0){
@@ -213,9 +214,9 @@ int main(){
 
             write(1,"echo: ",6); write(1,buffer,n);
 
-            memcpy(code,&buffer[0],3);
-            code[4] = '\0';
-            memcpy(status,&buffer[4],7);
+            memcpy(code,&buffer[0],3*sizeof(char));
+            code[3] = '\0';
+            memcpy(status,&buffer[4],3*sizeof(char));
             status[3] = '\0';
 
             if (strcmp(status,"NOK")==0){

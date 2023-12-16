@@ -22,9 +22,8 @@ int main(){
     ssize_t n,nw;
     socklen_t addrlen;
     struct sigaction act;
-    Auction *ptr_action1;
-    Auction *ptr_action2;
-    User user;    
+    int counter_auctions=0;
+    char state[9][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR"};
 
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
@@ -60,22 +59,22 @@ int main(){
             printf("Receiving: %s\n",buffer);
             memcpy(code,buffer,3*sizeof(char));
             if(strcmp(code,"OPA")==0){
-                sprintf(buffer_to_send,"ROA STATUS AID\n");        //FALTA STATUS E AID
+                sprintf(buffer_to_send,"ROA %s %d\n",state[2],counter_auctions);        //FALTA STATUS E AID
                 n=write(newfd,buffer_to_send,128);
                 if(n==-1) exit(1);
             }
             else if(strcmp(code,"CLS")==0){
-                sprintf(buffer_to_send,"RCL STATUS\n");        //FALTA STATUS
+                sprintf(buffer_to_send,"RCL %s\n",state[2]);        //FALTA STATUS
                 n=write(newfd,buffer_to_send,128);
                 if(n==-1) exit(1);
             }
             else if(strcmp(code,"SAS")==0){
-                sprintf(buffer_to_send,"RSA STATUS []\n");        //FALTA STATUS E mais coisas
+                sprintf(buffer_to_send,"RSA %s []\n",state[2]);        //FALTA STATUS E mais coisas
                 n=write(newfd,buffer_to_send,128);
                 if(n==-1) exit(1);
             }
             else if(strcmp(code,"BID")==0){
-                sprintf(buffer_to_send,"RBD STATUS\n");        //FALTA STATUS
+                sprintf(buffer_to_send,"RBD %s\n",state[2]);        //FALTA STATUS
                 n=write(newfd,buffer_to_send,128);
                 if(n==-1) exit(1);
             }
