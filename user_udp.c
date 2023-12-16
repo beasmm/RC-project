@@ -86,7 +86,7 @@ int execute_commands_client(char *buffer){
             else exit(0);
             return 0;
         default:
-            printf("Invalid command\n");
+            printf("Invalid command: %s\n", buffer);
             return 1;
     }
 }
@@ -125,7 +125,7 @@ int get_answer(char *buffer){
             if(client_login_answer(buffer)) user.logged_in = 1;
             break;
         case CMD_LOGOUT:
-            if(client_logout_answer(buffer)) user.logged_in = 1;
+            if(client_logout_answer(buffer)) user.logged_in = 0;
             break;
         case CMD_UNREGISTER:
             if(client_unregister_answer(buffer)) user.logged_in = 0;
@@ -146,7 +146,6 @@ int get_answer(char *buffer){
             exit(0);
             break;
         default:
-            printf("Invalid command\n");
             break;
     }
     return 0;
@@ -198,8 +197,7 @@ int main(){
 
         
         //empty command and reply
-        memset(command, 0, 30);
-
+        memset(buffer, 0, 128);
 
     }
     freeaddrinfo(res);

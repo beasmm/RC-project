@@ -106,7 +106,6 @@ int client_login_answer(char *buffer){
 }
 
 int client_logout_answer(char *buffer){
-
     if (strcmp("OK\n", buffer + 4) == 0) {
         printf("successful logout\n");
         return 1;
@@ -132,7 +131,7 @@ int client_unregister_answer(char *buffer){
         return 0;
     }
     else {
-        printf("incorrect unregister attempt\n");
+        printf("user not logged in\n");
         return 0;
     }
     return 0;

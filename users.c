@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include "users.h"
 #include "constants_udp.h"
@@ -24,7 +25,6 @@ int initUsers(){
 
 
 int createUserDir(char *uid){
-    printf("hello\n");
     char uid_dirname[15];
     char hosted_dirname[20];
     char bidded_dirname[20];
@@ -76,7 +76,7 @@ int createLogin(char *uid){
     return 1;
 }
 
-int updateLogin(char *uid){
+int updateLogin(char *uid, int logout){
     char login_name[35];
     FILE *fptr;
 
@@ -86,7 +86,8 @@ int updateLogin(char *uid){
     fptr = fopen(login_name, "w");
     if(fptr == NULL) return 0;
 
-    fprintf(fptr, "Logged out\n");
+    if (logout) fprintf(fptr, "Logged out\n");
+    else fprintf(fptr, "Logged in\n");
     
     fclose(fptr);
 
@@ -153,9 +154,9 @@ int checkLogin(char *uid){
     fptr = fopen(path, "r");
     if(fptr == NULL) return -1;
 
-    fscanf(fptr, "%s", login);
+    fscanf(fptr, " %[^\n]", login);
 
-    int ret = strcmp(login, "Logged in\n");
+    int ret = strncmp(login, "Logged in", 10);
 
     fclose(fptr);
     return ret;
@@ -180,6 +181,137 @@ int checkPassword(char *uid, char *pass){
     fclose(fptr);
     return ret;
 }
+
+int eraseHosted(char *uid, char *aid){
+    char path[35];
+
+    sprintf(path, "USERS/%s/HOSTED/%s.txt", uid, aid);
+
+    if (unlink(path) == -1){
+        if (errno == ENOENT) return 0;
+        else {
+            perror("Error deleting file");
+            return -1;
+        }
+    }
+    return 1;
+}
+
+int eraseBidded(char *uid, char *aid){
+    char path[35];
+
+    sprintf(path, "USERS/%s/BIDDED/%s.txt", uid, aid);
+
+    if (unlink(path) == -1){
+        if (errno == ENOENT) return 0;
+        else {
+            perror("Error deleting file");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int isDirectoryEmpty(const char *path){
+    DIR *dir = opendir(path);
+    if (dir == NULL){
+        perror("Error opening directory");
+        return -1;
+    }
+
+    struct dirent *entry;
+    int ret = 1;
+
+    while ((entry = readdir(dir)) != NULL){
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0){
+            ret = 0;
+            break;
+        }
+    }
+
+    closedir(dir);
+    return ret;
+}
+
+
+int emptyDir(char *uid, char *dir_name){
+    char path[25];
+    sprintf(path, "USERS/%s/%s", uid, dir_name);
+
+    int case_hosted = strcmp(dir_name, "HOSTED");
+
+    DIR *dir = opendir(path);
+    if (dir == NULL){
+        perror("Error opening directory");
+        return -1;
+    }
+
+    struct dirent *entry;
+    while((entry = readdir(dir)) != NULL) {
+        if (case_hosted == 0) eraseHosted(uid, entry->d_name);
+        else eraseBidded(uid, entry->d_name);
+    }
+
+    return 0;
+}
+
+int emptyUsersDir(char *uid){
+    char path[15];
+    sprintf(path, "USERS/%s", uid);
+
+    eraseLogin(uid);
+    erasePass(uid);
+
+    emptyDir(uid, "HOSTED");
+    emptyDir(uid, "BIDDED");
+
+    return 0;
+}
+
+int closeUsers(){
+    const char *path = "USERS";
+    
+    int is_empty = isDirectoryEmpty(path);
+
+    if (is_empty == -1) return -1;
+
+    if (is_empty){
+        if(rmdir(path) != 0) {
+            perror("Error deleting USERS directory");
+            return -1;
+        }
+    }
+
+    else {
+        DIR *dir = opendir(path);
+        if (dir == NULL){
+            perror("Error opening directory");
+            return -1;
+        }
+
+        struct dirent *entry;
+
+        while ((entry = readdir(dir)) != NULL){
+            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0){
+                char uid[7];
+                strncpy(uid, entry->d_name, 6);
+                uid[6] = '\0';
+                emptyUsersDir(uid);
+            }
+        }
+
+        closedir(dir);
+
+        if(rmdir(path) != 0) {
+            perror("Error deleting USERS directory");
+            return -1;
+        }
+
+    }
+    
+    return 0;
+}
+
 
 //user commands
 

@@ -8,7 +8,7 @@ int createUserDir(char *uid);
 
 int createLogin(char *uid);
 
-int updateLogin(char *uid);
+int updateLogin(char *uid, int logout);
 
 int eraseLogin(char *uid);
 
@@ -25,5 +25,19 @@ int checkLogin(char *uid);
  * @return int = 0 if correct, != 0 if incorrect
  */
 int checkPassword(char *uid, char *pass);
+
+int eraseHosted(char *uid, char *aid);
+
+int eraseBidded(char *uid, char *aid);
+
+int isDirectoryEmpty(const char *path);
+
+int emptyDir(char *uid, char *aid);
+
+int emptyUsersDir(char *uid);
+
+int closeUsers();
+
+
 
 #endif // USERS_H
