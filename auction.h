@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+int initAuctions();
+
 int createAuctionDir(int aid);
 
 int checkAssetFile(char *asset_fname);

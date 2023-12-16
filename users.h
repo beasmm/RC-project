@@ -2,6 +2,8 @@
 #define USERS_H
 
 
+int initUsers();
+
 int createUserDir(char *uid);
 
 int createLogin(char *uid);

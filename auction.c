@@ -1,4 +1,21 @@
 #include <stdio.h>
+#include <sys/stat.h>
+
+
+int initAuctions(){
+    struct stat st = {0};
+    int ret;
+
+    if (stat("AUCTIONS", &st) == -1) {
+        ret = mkdir("AUCTIONS", 0777);
+        if (ret == -1) {
+            printf("failed to create AUCTIONS directory\n");
+            return 0;
+        }
+    }
+    return 0;
+}
+
 
 int createAuctionDir(int aid){
     char aid_dirname[15];

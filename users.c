@@ -2,11 +2,29 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "users.h"
 #include "constants_udp.h"
 
+
+int initUsers(){
+    struct stat st = {0};
+    int ret;
+
+    if (stat("USERS", &st) == -1) {
+        ret = mkdir("USERS", 0777);
+        if (ret == -1) {
+            printf("failed to create USERS directory\n");
+            return 0;
+        }
+    }
+    return 0;
+}
+
+
 int createUserDir(char *uid){
+    printf("hello\n");
     char uid_dirname[15];
     char hosted_dirname[20];
     char bidded_dirname[20];
@@ -17,7 +35,10 @@ int createUserDir(char *uid){
     sprintf(uid_dirname, "USERS/%s", uid);
 
     ret = mkdir(uid_dirname, 0700);
-    if (ret == -1) return 0;
+    if (ret == -1) {
+        printf("mkdir failed\n");
+        return 0;
+    }
 
     sprintf(hosted_dirname, "USERS/%s/HOSTED", uid);
 

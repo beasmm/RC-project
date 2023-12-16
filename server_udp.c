@@ -202,6 +202,8 @@ int main(){
     
     n=bind(fd,res->ai_addr, res->ai_addrlen);
     if(n==-1) /*error*/ exit(1);
+
+    initUsers();
     
     while (1){
         addrlen = sizeof(addr);

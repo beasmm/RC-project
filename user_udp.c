@@ -169,7 +169,7 @@ int main(){
     hints.ai_family=AF_INET; //IPv4
     hints.ai_socktype=SOCK_DGRAM; //UDP socket
     
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
+    errcode=getaddrinfo("localhost",PORT,&hints,&res);
     if(errcode!=0) /*error*/ exit(1);
 
     //scanf("%s %s %s", cmd, uid, password);
