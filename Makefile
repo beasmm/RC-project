@@ -8,17 +8,17 @@ CFLAGS = -g -std=c17 -D_POSIX_C_SOURCE=200809L \
 all: user server
 
 user: user_udp.c 
-	$(CC) $(CFLAGS) $(SLEEP) -o udp user_udp.c
+	$(CC) $(CFLAGS) $(SLEEP) -o udp user_udp.c operations_udp_client.c
 
 server: server_udp.c users.c
-	$(CC) $(CFLAGS) $(SLEEP) -o server server_udp.c users.c
+	$(CC) $(CFLAGS) $(SLEEP) -o server_udp server_udp.c users.c
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c ${@:.o=.c}
 
 
 clean:
-	rm -f *.o udp server
+	rm -f *.o udp server_udp
 
 format:
 	@which clang-format >/dev/null 2>&1 || echo "Please install clang-format to run this command"

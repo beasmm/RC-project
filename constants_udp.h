@@ -12,8 +12,8 @@
 #define CASE_LIST 6
 
 typedef struct User{
-    char uid[UID_SIZE];
-    char password[PASSWORD_SIZE];
+    char uid[10];
+    char password[10];
     int logged_in;
 }User;
 
