@@ -62,6 +62,37 @@ int createAuctionDir(int aid){
     return 1;
 }
 
+int getAssetFileName(char *aid, char asset_fname[]){ //returns 0if no asset was found
+    char asset_dirname[30];
+    char full_path[300];
+    DIR *dir;
+    struct dirent *ent;
+    int i = 0;
+
+    sprintf(asset_dirname, "AUCTIONS/%s/ASSET", aid);
+
+    dir = opendir(asset_dirname);
+    if (dir == NULL) return 0;
+
+    while ((ent = readdir(dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+        struct stat file_stat;
+        snprintf(full_path, sizeof(full_path), "%s/%s", asset_dirname, ent->d_name);
+        if (stat(full_path, &file_stat) == 0) {
+            if (S_ISREG(file_stat.st_mode)) {
+                // If it's a regular file, print its name
+                strcpy(asset_fname, ent->d_name);
+                i++;
+                break;
+            }
+        } else {
+            perror("Error statting file");
+        }
+    }
+    closedir(dir);
+    return i;
+}
+
 int checkAssetFile(char *asset_fname){
     struct stat filestat;
     int ret_stat;

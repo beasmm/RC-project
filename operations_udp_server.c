@@ -212,6 +212,13 @@ int show_record(char *buffer){
     }
     sprintf(buffer, "RRC OK %06d", getHost(aid));
 
+    char asset_filename[128];
+    memset(asset_filename, 0, 128);
+    getAssetFileName(straid, asset_filename);
+
+    strcat(buffer, " ");
+    strcat(buffer, asset_filename);
+
     return 0;
 }
 
