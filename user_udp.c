@@ -34,9 +34,9 @@ enum Command get_client_command(char *buffer){
                 return CMD_UNREGISTER;
             else return CMD_ERROR;
         case 'm':
-            if ((buffer[1] == 'a' && buffer[2] == '\0') || strncmp("myauctions", buffer, 10) == 0)
+            if ((buffer[1] == 'a' && buffer[2] == ' ') || strncmp("myauctions", buffer, 10) == 0)
                 return CMD_MYAUCTIONS;
-            else if ((buffer[1] == 'b' && buffer[2] == '\0') || strncmp("mybids", buffer, 6) == 0)
+            else if ((buffer[1] == 'b' && buffer[2] == ' ') || strncmp("mybids", buffer, 6) == 0)
                 return CMD_MYBIDS;
             else return CMD_ERROR;
         case 's':
@@ -66,10 +66,10 @@ int execute_commands_client(char *buffer){
             client_unregister(buffer, &user);
             return 0;
         case CMD_MYAUCTIONS:
-            client_myauctions(buffer, &user);
+            client_myauctions(buffer);
             return 0;
         case CMD_MYBIDS:
-            client_mybids(buffer, &user);
+            client_mybids(buffer);
             return 0;
         case CMD_SHOW_RECORD:
             client_show_record(buffer);

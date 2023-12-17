@@ -68,7 +68,7 @@ int executeCommands(char *buffer){
             unregister(buffer);
             break;
         case CMD_MYAUCTIONS:
-            //myauctions(buffer);
+            myauctions(buffer);
             break;
         case CMD_MYBIDS:
             //mybids(buffer);

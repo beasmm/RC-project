@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
+#include <stdlib.h>
 
 #include "constants_udp.h"
 #include "users.h"
@@ -29,8 +30,9 @@ int login(char *buffer){
     }
     else { //user already exists / has existed in the past
         char path[30];
-        sprintf(path, "users/%s/login.txt", uid);
+        sprintf(path, "USERS/%s/%s_login.txt", uid, uid);
         if (access(path, F_OK) != 0){ // user was registered in the past
+            printf("path: %s\n", path);
             createLogin(uid);
             createPass(uid, password);
             sprintf(buffer, "RLI REG\n");
@@ -112,6 +114,46 @@ int unregister(char *buffer){
     return -1;
 }
 
+int myauctions(char *buffer){
+    char uid[UID_SIZE+1];
+    strncpy(uid, buffer + 4, UID_SIZE);
+    uid[UID_SIZE] = '\0';
+
+    memset(buffer, 0, 128);
+
+    if (checkLogin(uid) != 0){
+        sprintf(buffer, "RMA NLG\n");
+        return 0;
+    }
+
+    char path[30];
+    sprintf(path, "USERS/%s/HOSTED", uid);
+    
+    if(isDirectoryEmpty(path)){ //no auctions hosted by uid
+        sprintf(buffer, "RMA NOK\n");
+        return 0;
+    }
+
+    sprintf(buffer, "RMA OK");
+    char *aids[999];
+    int n_aids = getListOfFiles(path, aids);
+
+    printf("n_aids: %d\n", n_aids);
+
+    for (int i = 0; i < n_aids; i++){
+        printf("HELLO\n");
+        strcat(buffer, " ");
+        strcat(buffer, aids[i]);
+        printf("aid: %s\n", aids[i]);
+        int id = atoi(aids[i]);
+        if (checkActive(id)) strcat(buffer, " 1");
+        else strcat(buffer, " 0");
+        i++;
+    }
+    strcat(buffer, "\n");
+
+    return 0;
+}
 
 int list(char *buffer){
     memset(buffer, 0, 128);

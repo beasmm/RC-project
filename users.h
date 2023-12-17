@@ -38,6 +38,9 @@ int emptyUsersDir(char *uid);
 
 int closeUsers();
 
+int getListOfFiles(char path[], char *files[]);
+
+
 
 
 #endif // USERS_H

@@ -6,8 +6,8 @@
 int client_login(char *buffer, User *user);
 int client_logout(char *buffer, User *user);
 int client_unregister(char *buffer, User *user);
-int client_myauctions(char *buffer, User *user);
-int client_mybids(char *buffer, User *user);
+int client_myauctions(char *buffer);
+int client_mybids(char *buffer);
 int client_show_record(char *buffer);
 
 // Print auctions
