@@ -5,7 +5,7 @@
 //Client send operations:
 int client_open(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
     FILE *fptr;
-    sscanf(buffer, "open %s %s %d %d\n",auction.name,auction.asset_fname,auction.start_value,auction.timeactive);
+    sscanf(buffer, "open %s %s %d %d\n",auction.name,auction.asset_fname,&auction.start_value,&auction.timeactive);
 
     fptr = fopen(auction.asset_fname,"r");
     if(fptr == NULL){
@@ -22,22 +22,22 @@ int client_open(char *buffer, Auction auction, int uid, char password[PASSWORD_S
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"OPA %d %s %s %s %s %s %ld %s\n", uid, password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size, auction.data);
+    sprintf(buffer,"OPA %d %s %s %d %d %s %ln %s\n", uid, password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
     return 0;
 }
 
 int client_close(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
-    sscanf(buffer, "close %d\n", auction.aid);
+    sscanf(buffer, "close %d\n", &auction.aid);
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"CLS %s %s %s\n",uid, password, auction.aid);
+    sprintf(buffer,"CLS %d %s %d\n",uid, password, auction.aid);
     return 0;
 }
 
 int client_show_asset(char *buffer, Auction auction){
-    if(strcmp(buffer[1],'h')==0) sscanf(buffer, "show_asset %d\n", auction.aid);
-    else sscanf(buffer, "sa %d\n", auction.aid);
+    if(buffer[1]=='h') sscanf(buffer, "show_asset %d\n", &auction.aid);
+    else sscanf(buffer, "sa %d\n", &auction.aid);
 
     memset(buffer, 0, 128);
 
@@ -47,8 +47,8 @@ int client_show_asset(char *buffer, Auction auction){
 
 int client_bid(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
     int bid;
-    if(strcmp(buffer[1],'i')==0) sscanf(buffer, "bid %d\n", bid);
-    else sscanf(buffer, "b %d\n", bid);
+    if(buffer[1]=='i') sscanf(buffer, "bid %d\n", &bid);
+    else sscanf(buffer, "b %d\n", &bid);
 
     memset(buffer, 0, 128);
 
@@ -123,7 +123,7 @@ int client_bid_answer(char *buffer){
         return 0;
     }
     else if(strcmp("ACC\n", buffer + 4)==0){
-        prinf("Bid accepted\n");
+        printf("Bid accepted\n");
         return 1;
     }
     else if(strcmp("REF\n", buffer + 4)==0){

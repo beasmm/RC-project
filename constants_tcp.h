@@ -12,7 +12,7 @@ typedef struct{
     char asset_fname[FNAME];
     int start_value;
     int timeactive;
-    size_t size[FSIZE];
+    size_t size;
     char data[15];
     int aid;
     int higher_value;

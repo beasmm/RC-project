@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "netdb.h": "c",
-        "stdlib.h": "c",
-        "socket.h": "c",
-        "constants_udp.h": "c"
-    }
-}
