@@ -7,15 +7,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-//#define PORT "58011"
+#include <signal.h>
+
+#include "constants_client.h"
+#include "operations_tcp_client.h"
+#include "operations_udp_client.h"
 
 #define PORT "58011"
 
-
-#include "constants_client.h"
-
-//global variables
 User user;
+Auction auction;
+
+int send_udp;
 
 
 enum Command get_client_command(char *buffer){
@@ -41,7 +44,15 @@ enum Command get_client_command(char *buffer){
         case 's':
             if ((buffer[1] == 'r' && buffer[2] == ' ') || strncmp("show_record", buffer, 11) == 0)
                 return CMD_SHOW_RECORD;
+            else if (buffer[1] == 'a' || strncmp("show_asset", buffer, 10) == 0)
+                return CMD_SAS;
             else return CMD_ERROR;
+        case 'o': // open
+            return CMD_OPA;
+        case 'c': //close
+            return CMD_CLS;
+        case 'b': //bid
+            return CMD_BID;
         case 'e':
             if(strcmp("exit", buffer) == 0)
                 return CMD_EXIT;
@@ -54,21 +65,40 @@ enum Command get_client_command(char *buffer){
 int execute_commands_client(char *buffer){
     switch(get_client_command(buffer)){
         case CMD_LOGIN:
+            send_udp = 1;
             return client_login(buffer, &user);
         case CMD_LOGOUT:
+            send_udp = 1;
             return client_logout(buffer, &user);
         case CMD_UNREGISTER:
+            send_udp = 1;
             return client_unregister(buffer, &user);
         case CMD_MYAUCTIONS:
+            send_udp = 1;
             return client_myauctions(buffer);
         case CMD_MYBIDS:
+            send_udp = 1;
             return client_mybids(buffer);
         case CMD_SHOW_RECORD:
+            send_udp = 1;
             return client_show_record(buffer);
         case CMD_LIST:
+            send_udp = 1;
             memset(buffer, 0, 128);
             sprintf(buffer, "LST\n");
             return 0;
+        case CMD_OPA:
+            send_udp = 0;
+            return client_open(buffer, auction, user);
+        case CMD_CLS:
+            send_udp = 0;
+            return client_close(buffer, auction, user);
+        case CMD_SAS:
+            send_udp = 0;
+            return client_show_asset(buffer, auction);
+        case CMD_BID:
+            send_udp = 0;
+            return client_bid(buffer, auction, user);
         case CMD_EXIT:
             if (user.logged_in) {
                 printf("please logout first\n");
@@ -81,9 +111,8 @@ int execute_commands_client(char *buffer){
             return 1;
     }
 }
-//TODO: change password size
 
-enum Command get_answer_command(char *buffer){
+enum Command get_answer_command(char *buffer){//clean up, user buffer[1]
     switch(buffer[0]){
         case 'R':
             if (buffer[1] == 'L' && buffer[2] == 'I')
@@ -100,6 +129,14 @@ enum Command get_answer_command(char *buffer){
                 return CMD_SHOW_RECORD;
             else if (buffer[1] == 'L' && buffer[2] == 'S')
                 return CMD_LIST;
+            else if (buffer[1] == 'O' && buffer[2] == 'A')
+                return CMD_OPA;
+            else if (buffer[1] == 'C' && buffer[2] == 'L')
+                return CMD_CLS;
+            else if (buffer[1] == 'S' && buffer[2] == 'A')
+                return CMD_SAS;
+            else if (buffer[1] == 'B' && buffer[2] == 'D')
+                return CMD_BID;
             else return CMD_ERROR;
         case 'E':
             if (buffer[1] == 'R' && buffer[2] == 'R')
@@ -110,7 +147,7 @@ enum Command get_answer_command(char *buffer){
     }
 }
 
-int get_answer(char *buffer){
+int execute_answer_client(char *buffer){
     switch(get_answer_command(buffer)){
         case CMD_LOGIN:
             if(client_login_answer(buffer)) user.logged_in = 1;
@@ -133,6 +170,17 @@ int get_answer(char *buffer){
         case CMD_LIST:
             client_list_answer(buffer);
             break;
+        case CMD_OPA:
+            client_open_answer(buffer);
+            break;
+        case CMD_CLS:
+            return client_close_answer(buffer);
+        case CMD_SAS:
+            client_show_asset_answer(buffer);
+            break;
+        case CMD_BID:
+            client_bid_answer(buffer);
+            break;
         case CMD_EXIT:
             exit(0);
             break;
@@ -142,51 +190,76 @@ int get_answer(char *buffer){
     return 0;
 }
 
+
 int main(){
-    int fd,errcode;
+    int fd_udp, fd_tcp, errcode;
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints,*res;
     struct sockaddr_in addr;
 
-    char buffer[128];
-    char command[30];
+    char code[3]={0};
+    char status[3]={0};
+    char aid[3]={0};
+    struct sigaction act;
 
-    fd=socket(AF_INET,SOCK_DGRAM,0); //UDP socket
-    if(fd==-1) /*error*/exit(1);
+    memset(&act,0,sizeof act);
+    act.sa_handler=SIG_IGN;
+
+    if(sigaction(SIGPIPE,&act,NULL)==-1) exit(-1);
+
+    char buffer[128];
+
+    fd_udp=socket(AF_INET,SOCK_DGRAM,0); //UDP socket
+    if(fd_udp==-1) /*error*/exit(1);
+    fd_tcp=socket(AF_INET,SOCK_STREAM,0); //TCP socket
+    if(fd_tcp==-1) /*error*/exit(1);
 
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET; //IPv4
     hints.ai_socktype=SOCK_DGRAM; //UDP socket
     
-    errcode=getaddrinfo("localhost",PORT,&hints,&res);
+    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
     if(errcode!=0) /*error*/ exit(1);
 
     user.logged_in = 0;
 
-    //scanf("%s %s %s", cmd, uid, password);
-
     while(1){
+        memset(buffer, 0, sizeof(buffer));
+        scanf(" %[^\n]", buffer);
 
-        memset(command, 0, sizeof(command));
-        scanf(" %[^\n]", command);
-
-        int do_continue = execute_commands_client(command);
+        int do_continue = execute_commands_client(buffer);
 
         if (do_continue) continue;
 
-        printf("command: %s", command);
-        
-        n=sendto(fd, command, strlen(command), 0, res->ai_addr, res->ai_addrlen);
-        if(n==-1) /*error*/ exit(1);
+        printf("command: %s", buffer);
 
-        addrlen = sizeof(addr);
-        n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
-        if(n==-1) /*error*/ exit(1);
+        if (send_udp) { //case udp
+            printf("sendind udp\n");
+            n=sendto(fd_udp, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
+            if(n==-1) /*error*/ exit(1);
+
+            memset(buffer, 0, 128);
+
+            addrlen = sizeof(addr);
+            n=recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+            if(n==-1) /*error*/ exit(1);
+        }
+
+        else { // case tcp
+            printf("sending tcp\n");
+            n=write(fd_tcp,buffer,128);
+            if(n==-1) exit(1);
+
+            memset(buffer, 0, 128);
+            
+            n=read(fd_tcp,buffer,128);
+            if(n==-1) exit(1);
+        }
 
         printf("received: %s", buffer);
 
-        get_answer(buffer);
+        execute_answer_client(buffer);
 
         
         //empty command and reply
@@ -194,6 +267,6 @@ int main(){
 
     }
     freeaddrinfo(res);
-    close(fd);
+    close(fd_udp); close(fd_tcp);
     return 0;
 }

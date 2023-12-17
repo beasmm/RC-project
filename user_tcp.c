@@ -8,12 +8,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "constants_tcp.h"
-#include "constants_udp.h"
+#include "constants_client.h"
 #include "operations_tcp_client.h"
 
 //global variables
 Auction auction;
+User user;
 
 enum Command get_client_cmd_tcp(char *buffer){
     switch(buffer[0]){

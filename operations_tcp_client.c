@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "constants_tcp.h"
+#include "constants_client.h"
 
 
 //Client send operations:
@@ -23,7 +23,7 @@ int client_open(char *buffer, Auction auction, User user){
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"OPA %d %s %s %d %d %s %ln %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
+    sprintf(buffer,"OPA %s %s %s %d %d %s %ln %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
     return 0;
 }
 
@@ -32,7 +32,7 @@ int client_close(char *buffer, Auction auction, User user){
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"CLS %d %s %d\n",user.uid, user.password, auction.aid);
+    sprintf(buffer,"CLS %s %s %d\n",user.uid, user.password, auction.aid);
     return 0;
 }
 
@@ -53,7 +53,7 @@ int client_bid(char *buffer, Auction auction, User user){
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"BID %d %s %d %d\n", user.uid, user.password, auction.aid, bid);
+    sprintf(buffer,"BID %s %s %d %d\n", user.uid, user.password, auction.aid, bid);
     return 0;
 }
 
