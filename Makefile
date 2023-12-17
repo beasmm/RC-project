@@ -8,10 +8,10 @@ CFLAGS = -g -std=c17 -D_POSIX_C_SOURCE=200809L \
 all: user server
 
 user: user_udp.c 
-	$(CC) $(CFLAGS) $(SLEEP) -o udp user_udp.c operations_udp_client.c
+	$(CC) $(CFLAGS) $(SLEEP) -o udp user_udp.c operations_udp_client.c 
 
 server: server_udp.c users.c
-	$(CC) $(CFLAGS) $(SLEEP) -o server_udp server_udp.c users.c
+	$(CC) $(CFLAGS) $(SLEEP) -o server_udp server_udp.c users.c operations_udp_server.c auction.c
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c ${@:.o=.c}
