@@ -37,7 +37,7 @@ typedef struct{
     char asset_fname[FNAME];
     int start_value;
     int timeactive;
-    ssize_t size;
+    long int size;
     char *data;
     int aid;
     int higher_value;

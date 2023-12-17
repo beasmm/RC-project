@@ -32,7 +32,7 @@ int getAssetData(char *path, char *data, size_t size){
 }
 
 
-ssize_t checkAssetSize(char *path){
+long int checkAssetSize(char *path){
 
     struct stat filestat;
     int ret_stat;
@@ -45,8 +45,14 @@ ssize_t checkAssetSize(char *path){
 }
 
 //Client send operations:
-int client_open(char *buffer, Auction auction, User user){
-    sscanf(buffer, "open %s %s %d %d\n",auction.name,auction.asset_fname,&auction.start_value,&auction.timeactive);
+int client_open(char *buffer, Auction auction, User user, char img_name[], long int *bytes_img){
+    sscanf(buffer, "open %s %s %d %d\n", auction.name, auction.asset_fname, &auction.start_value, &auction.timeactive);
+
+    printf("name: %s\n", auction.name);
+    printf("asset_fname: %s\n", auction.asset_fname);
+    printf("start_value: %d\n", auction.start_value);
+    printf("timeactive: %d\n", auction.timeactive);
+
 
     char path[128];
     sprintf(path, "ASSETS/%s", auction.asset_fname);
@@ -57,12 +63,18 @@ int client_open(char *buffer, Auction auction, User user){
     else{
         auction.size = checkAssetSize(path);
         auction.data = malloc(auction.size);
+        printf("data: %s\n", auction.data);
         getAssetData(path, auction.data, auction.size);
     }
 
-    memset(buffer, 0, 128);
+    strcpy(img_name, path);
+    *bytes_img = auction.size;
 
-    sprintf(buffer,"OPA %s %s %s %d %d %s %ln %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
+    printf("size: %ld\n", *bytes_img);
+
+    memset(buffer, 0, MAXLINE);
+
+    sprintf(buffer,"OPA %s %s %s %d %d %s %ld \n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size);
     printf("buffer open: %s\n", buffer);
     return 0;
 }
@@ -80,20 +92,20 @@ int client_show_asset(char *buffer, Auction auction){
     if(buffer[1]=='h') sscanf(buffer, "show_asset %d\n", &auction.aid);
     else sscanf(buffer, "sa %d\n", &auction.aid);
 
-    memset(buffer, 0, 128);
+    memset(buffer, 0, MAXLINE);
 
     sprintf(buffer,"SAS %03d\n", auction.aid);
     return 0;
 }
 
-int client_bid(char *buffer, Auction auction, User user){
-    int bid;
-    if(buffer[1]=='i') sscanf(buffer, "bid %d\n", &bid);
-    else sscanf(buffer, "b %d\n", &bid);
+int client_bid(char *buffer, User user){
+    int aid, value;
+    if(buffer[1]=='i') sscanf(buffer, "bid %d %d\n", &aid, &value);
+    else sscanf(buffer, "b %d %d\n", &aid, &value);
 
-    memset(buffer, 0, 128);
+    memset(buffer, 0, MAXLINE);
 
-    sprintf(buffer,"BID %s %s %03d %d\n", user.uid, user.password, auction.aid, bid);
+    sprintf(buffer,"BID %s %s %03d %d\n", user.uid, user.password, aid, value);
     return 0;
 }
 
@@ -108,7 +120,8 @@ int client_open_answer(char *buffer){
         return 0;
     }
     else if(strncmp("OK", buffer + 4, 2)==0){
-        printf("Auction %s opened\n", buffer + 7);
+        int aid = atoi(buffer + 7);
+        printf("Auction %d opened\n", aid);
         return 1;
     }
     else if(strcmp("ERR\n", buffer + 4)==0){

@@ -19,6 +19,8 @@ User user;
 Auction auction;
 
 int send_udp;
+long int bytes_img = 0;
+char img_name[128] = {0};
 
 
 enum Command get_client_command(char *buffer){
@@ -89,16 +91,20 @@ int execute_commands_client(char *buffer){
             return 0;
         case CMD_OPA:
             send_udp = 0;
-            return client_open(buffer, auction, user);
+            client_open(buffer, auction, user, img_name, &bytes_img);
+            return 0;
         case CMD_CLS:
             send_udp = 0;
+            bytes_img = 0;
             return client_close(buffer, auction, user);
         case CMD_SAS:
             send_udp = 0;
+            bytes_img = 0;
             return client_show_asset(buffer, auction);
         case CMD_BID:
             send_udp = 0;
-            return client_bid(buffer, auction, user);
+            bytes_img = 0;
+            return client_bid(buffer, user);
         case CMD_EXIT:
             if (user.logged_in) {
                 printf("please logout first\n");
@@ -217,7 +223,7 @@ int main(){
 
     if(sigaction(SIGPIPE,&act,NULL)==-1) exit(-1);
 
-    char buffer[256];
+    char buffer[MAXLINE];
 
     fd_udp=socket(AF_INET,SOCK_DGRAM,0); //UDP socket
     if(fd_udp==-1) /*error*/exit(1);
@@ -233,39 +239,50 @@ int main(){
 
     user.logged_in = 0;
 
-    while(1){
+    int do_continue = 0;
+    while(do_continue == 0){
         memset(buffer, 0, sizeof(buffer));
         scanf(" %[^\n]", buffer);
-
-        int do_continue = execute_commands_client(buffer);
+        
+        do_continue = execute_commands_client(buffer);
 
         if (do_continue) continue;
 
         printf("command: %s", buffer);
 
         if (send_udp) { //case udp
-            printf("sendind udp\n");
             n=sendto(fd_udp, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
             if(n==-1) /*error*/ exit(1);
 
-            memset(buffer, 0, 256);
+            memset(buffer, 0, MAXLINE);
 
             addrlen = sizeof(addr);
-            n=recvfrom(fd_udp, buffer, 256, 0, (struct sockaddr*)&addr, &addrlen);
+            n=recvfrom(fd_udp, buffer, MAXLINE, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1) /*error*/ exit(1);
         }
 
         else { // case tcp
-            printf("sending tcp\n");
             n=connect(fd_tcp,res->ai_addr,res->ai_addrlen);
             if(n==-1)/*error*/exit(1);
 
-            n=write(fd_tcp,buffer,256);
+            n=write(fd_tcp,buffer,MAXLINE);
             if(n==-1) exit(1);
 
-            memset(buffer, 0, 256);
+            memset(buffer, 0, MAXLINE);
+
+            if (bytes_img > 0) {
+                FILE *file = fopen(img_name, "rb");
+                if (!file) {
+                    perror("Error opening file");
+                    continue;
+                }
+                size_t bytesRead;
+                while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+                    n=write(fd_tcp,buffer,MAXLINE);
+                }
+            }
             
-            n=read(fd_tcp,buffer,256);
+            n=read(fd_tcp,buffer,MAXLINE);
             if(n==-1) exit(1);
             close(fd_tcp);
         }
