@@ -36,16 +36,25 @@ int login(char *buffer){
         createUserDir(uid);
         createLogin(uid);
         createPass(uid, password);
-        sprintf(buffer, "RLI REG");
+        sprintf(buffer, "RLI REG\n");
         return 0;
     }
-    else { //user already exists
-        if (checkPassword(uid, password) == 0) {
-            sprintf(buffer, "RLI OK");
+    else { //user already exists / has existed in the past
+        char path[30];
+        sprintf(path, "users/%s/login.txt", uid);
+        if (access(path, F_OK) != 0){ // user was registered in the past
+            createLogin(uid);
+            createPass(uid, password);
+            sprintf(buffer, "RLI REG\n");
+            return 0;
+        }
+        else if (checkPassword(uid, password) == 0) {
+            updateLogin(uid, 0);
+            sprintf(buffer, "RLI OK\n");
             return 0;
         }
         else {
-            sprintf(buffer, "RLI NOK");
+            sprintf(buffer, "RLI NOK\n");
             return 0;
         }
     }
@@ -65,18 +74,18 @@ int logout(char *buffer){
     memset(buffer, 0, 128);
 
     if (checkRegistered(uid) == -1) {
-        sprintf(buffer, "RLO UNR");
+        sprintf(buffer, "RLO UNR\n");
         return 0;
     }
 
     if (checkLogin(uid) == 0) {
         if (checkPassword(uid, password) == 0) {
-            updateLogin(uid);
-            sprintf(buffer, "RLO OK");
+            updateLogin(uid, 1);
+            sprintf(buffer, "RLO OK\n");
             return 0;
         }
         else {
-            sprintf(buffer, "RLO NOK");
+            sprintf(buffer, "RLO NOK\n");
             return 0;
         }
     }
@@ -96,7 +105,7 @@ int unregister(char *buffer){
     memset(buffer, 0, 128);
 
     if (checkRegistered(uid) == -1) {
-        sprintf(buffer, "RUN UNR");
+        sprintf(buffer, "RUR UNR\n");
         return 0;
     }
 
@@ -104,12 +113,12 @@ int unregister(char *buffer){
         if (checkPassword(uid, password) == 0) {
             eraseLogin(uid);
             erasePass(uid);
-            sprintf(buffer, "RUN OK");
+            sprintf(buffer, "RUR OK\n");
             return 0;
         }
     }
     else {
-        sprintf(buffer, "RUN NOK");
+        sprintf(buffer, "RUR NOK\n");
         return 0;
     }
     return -1;
@@ -121,8 +130,10 @@ enum Command get_command(char *buffer){
         case 'L':
             if (buffer[1] == 'I' && buffer[2] == 'N')
                 return CMD_LOGIN;
-            else if (buffer[1] == 'O' && buffer[2] == 'U')
+            else if (buffer[1] == 'O' && buffer[2] == 'U'){
+                printf("logout\n");
                 return CMD_LOGOUT;
+            }
             else if (buffer[1] == 'S' && buffer[2] == 'T')
                 return CMD_LIST;
             else if (buffer[1] == 'M' && buffer[2] == 'A')
@@ -141,13 +152,18 @@ enum Command get_command(char *buffer){
                 return CMD_SHOW_RECORD;
             else
                 return CMD_ERROR;
+        case 'e':
+            if( (strcmp(buffer, "exit\n") == 0) || (strcmp(buffer, "exit") == 0) )
+                return CMD_EXIT;
+            else
+                return CMD_ERROR;
         default:
             return CMD_ERROR;
     }
 }
 
 
-void executeCommands(char *buffer){
+int executeCommands(char *buffer){
     switch(get_command(buffer)){
         case CMD_LOGIN:
             login(buffer);
@@ -171,12 +187,11 @@ void executeCommands(char *buffer){
             //list(buffer);
             break;
         case CMD_EXIT:
-            exit(0);
-            break;
+            return 1;
         default:
-            printf("Invalid command\n");
-            break;
+            sprintf(buffer, "ERR\n");
     }
+    return 0;
 }
 
 
@@ -207,21 +222,22 @@ int main(){
     
     while (1){
         addrlen = sizeof(addr);
+        memset(buffer, 0, 128);
         n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
         if(n==-1)/*error*/exit(1);
 
         write(1, "received: ", 10); write(1, buffer, n);
 
-        executeCommands(buffer);
-
-        //strcpy(buffer, "Hello!\n");
+        if (executeCommands(buffer)) break;
         
         n = sendto(fd, buffer, n, 0, (struct sockaddr*)&addr, addrlen);
         if(n==-1)/*error*/exit(1);
+
     }
 
     freeaddrinfo(res);
     close(fd);
-
+    
+    closeUsers();
     return 0;
 }
