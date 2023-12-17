@@ -4,6 +4,7 @@
 #define MAX_CMD_SIZE 11
 #define UID_SIZE 6
 #define PASSWORD_SIZE 8
+#define MAXLINE 1024
 
 //AUCTION
 #define NAME_SIZE 15
@@ -37,7 +38,7 @@ typedef struct{
     int start_value;
     int timeactive;
     ssize_t size;
-    char data[15];
+    char *data;
     int aid;
     int higher_value;
 }Auction;

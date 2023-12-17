@@ -1,29 +1,69 @@
 #include <stdio.h>
 #include <string.h>
-#include "constants_client.h"
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
 
+#include "constants.h"
+
+
+int getAssetData(char *path, char *data, size_t size){
+    FILE *file = fopen(path, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return 0;  // Failed to open file
+    }
+
+    // Read data from the file
+    size_t bytesRead = fread(data, sizeof(char), size, file);
+    if (ferror(file)) {
+        perror("Error reading file");
+        fclose(file);
+        return 0;  // Failed to read from file
+    }
+
+    // Null-terminate the buffer
+    data[bytesRead] = '\0';
+
+    // Close the file
+    fclose(file);
+
+    return 1;  // Success
+}
+
+
+ssize_t checkAssetSize(char *path){
+
+    struct stat filestat;
+    int ret_stat;
+
+    ret_stat = stat(path, &filestat);
+
+    if(ret_stat == -1 || filestat.st_size == 0) return 0;
+
+    return (filestat.st_size);
+}
 
 //Client send operations:
 int client_open(char *buffer, Auction auction, User user){
-    FILE *fptr;
     sscanf(buffer, "open %s %s %d %d\n",auction.name,auction.asset_fname,&auction.start_value,&auction.timeactive);
 
-    fptr = fopen(auction.asset_fname,"r");
-    if(fptr == NULL){
-        printf("Error opening file\n");                    //??
-        return -1;
+    char path[128];
+    sprintf(path, "ASSETS/%s", auction.asset_fname);
+    struct stat st = {0};
+    if (stat("ASSETS", &st) == -1) {
+        printf("File %s does not exist\n", auction.asset_fname);
     }
     else{
-        fseek(fptr, 0, SEEK_END);                         //find size of file
-        auction.size = ftell(fptr)+1;
-        fseek(fptr, 0, SEEK_SET);                         //find begining of file
-        fread(auction.data, auction.size, 1,fptr);
-        fclose(fptr);
+        auction.size = checkAssetSize(path);
+        auction.data = malloc(auction.size);
+        getAssetData(path, auction.data, auction.size);
     }
 
     memset(buffer, 0, 128);
 
     sprintf(buffer,"OPA %s %s %s %d %d %s %ln %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
+    printf("buffer open: %s\n", buffer);
     return 0;
 }
 

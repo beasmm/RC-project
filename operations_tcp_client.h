@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_TCP_H
 #define CONSTANTS_TCP_H
 
+int checkAssetSize(char *path);
+
 //Client send operations:
 int client_open(char *buffer, Auction auction, User user);
 int client_close(char *buffer, Auction auction, User user);
