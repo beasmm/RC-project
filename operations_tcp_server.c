@@ -10,7 +10,7 @@
 #include "users.h"
 #include "auction.h"
 
-char state[9][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR"};
+char state[10][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR","EOW"};
 int aid;
 
 int open(char *buffer){
@@ -32,5 +32,11 @@ int open(char *buffer){
 int close(char *buffer){
     Auction auction;
     User user;
-    sscanf(buffer, "CLS %d %s %d\n",auction.)
+    sscanf(buffer, "CLS %d %s %d\n",user.uid, user.password, auction.aid);
+    memset(buffer, 0, 128);
+   
+    sprintf(buffer,"RCL %s\n",state[3]); // auction doesnt exist
+    sprintf(buffer,"RCL %s\n",state[9]); // auction is not owned by user
+    sprintf(buffer,"RCL %s\n",state[4]); // auction has already finished
+    sprintf(buffer,"RCL %s\n",state[2]); // auction closed
 }
