@@ -15,11 +15,11 @@ int client_login(char *buffer, User *user){
 
     if (strlen(user->uid) != UID_SIZE) { //register new user
         printf("invalid uid\n");
-        return -1;
+        return 1;
     }
     if (strlen(user->password) != PASSWORD_SIZE) { //register new user
         printf("invalid password\n");
-        return -1;
+        return 1;
     }
     sprintf(buffer, "LIN %s %s\n", user->uid, user->password);
     return 0;
@@ -43,7 +43,7 @@ int client_myauctions(char *buffer){
 
     /* if (strlen(uid) != UID_SIZE) {
         printf("invalid uid\n");
-        return -1;
+        return 1;
     } */
 
     id[UID_SIZE+1] = '\0';
@@ -59,7 +59,7 @@ int client_mybids(char *buffer){
 
     if (strlen(uid) != UID_SIZE) {
         printf("invalid uid\n");
-        return -1;
+        return 1;
     }
 
     uid[UID_SIZE] = '\0';
@@ -70,9 +70,15 @@ int client_mybids(char *buffer){
 }
 
 int client_show_record(char *buffer){
-    char aid[4];
-    memset(aid, 0, 4);
-    sscanf(buffer, "show_record %s", aid);
+    char aid[10];
+    memset(aid, 0, 10);
+    sscanf(buffer, "%*s %s", aid);
+
+    if (strlen(aid) != 3) {
+        printf("invalid auction id\n");
+        return 1;
+    }
+
     memset(buffer, 0, 128);
     sprintf(buffer, "SRC %s\n", aid);
     return 0;

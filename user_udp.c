@@ -55,25 +55,17 @@ enum Command get_client_command(char *buffer){
 int execute_commands_client(char *buffer){
     switch(get_client_command(buffer)){
         case CMD_LOGIN:
-            client_login(buffer, &user);
-            printf("uid: %s\n", user.uid);
-            printf("password: %s\n", user.password);
-            return 0;
+            return client_login(buffer, &user);
         case CMD_LOGOUT:
-            client_logout(buffer, &user);
-            return 0;
+            return client_logout(buffer, &user);
         case CMD_UNREGISTER:
-            client_unregister(buffer, &user);
-            return 0;
+            return client_unregister(buffer, &user);
         case CMD_MYAUCTIONS:
-            client_myauctions(buffer);
-            return 0;
+            return client_myauctions(buffer);
         case CMD_MYBIDS:
-            client_mybids(buffer);
-            return 0;
+            return client_mybids(buffer);
         case CMD_SHOW_RECORD:
-            client_show_record(buffer);
-            return 0;
+            return client_show_record(buffer);
         case CMD_LIST:
             memset(buffer, 0, 128);
             sprintf(buffer, "LST\n");

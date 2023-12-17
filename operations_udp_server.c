@@ -142,13 +142,16 @@ int myauctions(char *buffer){
     sprintf(buffer, "RMA OK");
     char *aids[999];
     int n_aids = getListOfFiles(path, aids);
+    char aux[4];
+    memset(aux, 0, 4);
 
     qsort(aids, n_aids, sizeof(aids[0]), compareStrings);
 
     for (int i = 0; i < n_aids; i++){
         strcat(buffer, " ");
-        strcat(buffer, aids[i]);
-        int id = atoi(aids[i]);
+        strncpy(aux, aids[i], 3);
+        strcat(buffer, aux);
+        int id = atoi(aux);
         if (checkActive(id)) strcat(buffer, " 1");
         else strcat(buffer, " 0");
     }
@@ -180,17 +183,34 @@ int mybids(char *buffer){
     sprintf(buffer, "RMB OK");
     char *aids[999];
     int n_aids = getListOfFiles(path, aids);
+    char aux[4];
+    memset(aux, 0, 4);
 
     qsort(aids, n_aids, sizeof(aids[0]), compareStrings);
 
     for (int i = 0; i < n_aids; i++){
         strcat(buffer, " ");
-        strcat(buffer, aids[i]);
-        int id = atoi(aids[i]);
+        strncpy(aux, aids[i], 3);
+        strcat(buffer, aux);
+        int id = atoi(aux);
         if (checkActive(id)) strcat(buffer, " 1");
         else strcat(buffer, " 0");
     }
     strcat(buffer, "\n");
+
+    return 0;
+}
+
+int show_record(char *buffer){
+    char straid[4];
+    strncpy(straid, buffer + 4, 3);
+    int aid = atoi(straid);
+
+    if (auctionExists(aid) == -1){
+        sprintf(buffer, "RRC NOK\n");
+        return 0;
+    }
+    sprintf(buffer, "RRC OK %06d", getHost(aid));
 
     return 0;
 }

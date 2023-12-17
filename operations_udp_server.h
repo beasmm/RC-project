@@ -8,6 +8,7 @@ int login(char *buffer);
 int logout(char *buffer);
 int unregister(char *buffer);
 int myauctions(char *buffer);
+int show_record(char *buffer);
 int mybids(char *buffer);
 int list(char *buffer);
 

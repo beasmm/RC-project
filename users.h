@@ -40,6 +40,8 @@ int closeUsers();
 
 int getListOfFiles(char path[], char *files[]);
 
+int getHost(int aid);
+
 
 
 
