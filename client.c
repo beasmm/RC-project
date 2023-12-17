@@ -113,34 +113,46 @@ int execute_commands_client(char *buffer){
 }
 
 enum Command get_answer_command(char *buffer){//clean up, user buffer[1]
-    switch(buffer[0]){
-        case 'R':
-            if (buffer[1] == 'L' && buffer[2] == 'I')
+    switch(buffer[1]){
+        case 'L':
+            if (buffer[2] == 'I')
                 return CMD_LOGIN;
-            else if (buffer[1] == 'L' && buffer[2] == 'O')
+            else if (buffer[2] == 'O')
                 return CMD_LOGOUT;
-            else if (buffer[1] == 'U' && buffer[2] == 'R')
-                return CMD_UNREGISTER;
-            else if (buffer[1] == 'M' && buffer[2] == 'A')
-                return CMD_MYAUCTIONS;
-            else if (buffer[1] == 'M' && buffer[2] == 'B')
-                return CMD_MYBIDS;
-            else if (buffer[1] == 'S' && buffer[2] == 'R')
-                return CMD_SHOW_RECORD;
-            else if (buffer[1] == 'L' && buffer[2] == 'S')
+            else if (buffer[2] == 'S')
                 return CMD_LIST;
-            else if (buffer[1] == 'O' && buffer[2] == 'A')
-                return CMD_OPA;
-            else if (buffer[1] == 'C' && buffer[2] == 'L')
-                return CMD_CLS;
-            else if (buffer[1] == 'S' && buffer[2] == 'A')
-                return CMD_SAS;
-            else if (buffer[1] == 'B' && buffer[2] == 'D')
-                return CMD_BID;
             else return CMD_ERROR;
-        case 'E':
-            if (buffer[1] == 'R' && buffer[2] == 'R')
+        case 'U':
+            if (buffer[2] == 'R')
+                return CMD_UNREGISTER;
+            else return CMD_ERROR;
+        case 'M':
+            if (buffer[2] == 'A')
+                return CMD_MYAUCTIONS;
+            else if (buffer[2] == 'B')
+                return CMD_MYBIDS;
+            else return CMD_ERROR;
+        case 'R':
+            if (buffer[0] == 'E' && buffer[1] == 'R')
                 return CMD_ERROR;
+            else if (buffer[2] == 'C')
+                return CMD_SHOW_RECORD;
+            else return CMD_ERROR;
+        case 'O':
+            if (buffer[2] == 'A')
+                return CMD_OPA;
+            else return CMD_ERROR;
+        case 'C':
+            if (buffer[2] == 'L')
+                return CMD_CLS;
+            else return CMD_ERROR;
+        case 'S':
+            if (buffer[2] == 'A')
+                return CMD_SAS;
+            else return CMD_ERROR;
+        case 'B':
+            if (buffer[2] == 'D')
+                return CMD_BID;
             else return CMD_ERROR;
         default:
             return CMD_ERROR;
@@ -205,7 +217,7 @@ int main(){
 
     if(sigaction(SIGPIPE,&act,NULL)==-1) exit(-1);
 
-    char buffer[128];
+    char buffer[256];
 
     fd_udp=socket(AF_INET,SOCK_DGRAM,0); //UDP socket
     if(fd_udp==-1) /*error*/exit(1);
@@ -236,10 +248,10 @@ int main(){
             n=sendto(fd_udp, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
             if(n==-1) /*error*/ exit(1);
 
-            memset(buffer, 0, 128);
+            memset(buffer, 0, 256);
 
             addrlen = sizeof(addr);
-            n=recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+            n=recvfrom(fd_udp, buffer, 256, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1) /*error*/ exit(1);
         }
 
@@ -248,12 +260,12 @@ int main(){
             n=connect(fd_tcp,res->ai_addr,res->ai_addrlen);
             if(n==-1)/*error*/exit(1);
 
-            n=write(fd_tcp,buffer,128);
+            n=write(fd_tcp,buffer,256);
             if(n==-1) exit(1);
 
-            memset(buffer, 0, 128);
+            memset(buffer, 0, 256);
             
-            n=read(fd_tcp,buffer,128);
+            n=read(fd_tcp,buffer,256);
             if(n==-1) exit(1);
             close(fd_tcp);
         }
