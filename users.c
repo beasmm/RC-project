@@ -158,10 +158,7 @@ int checkLogin(char *uid){
     fscanf(fptr, " %[^\n]", login);
 
     int ret = strncmp(login, "Logged in", 10);
-
-    printf("login: %s\n", login);
-    printf("ret: %d\n", ret);
-
+    
     fclose(fptr);
     return ret;
 }
@@ -331,14 +328,11 @@ int getListOfFiles(char path[], char *files[]){
     int count = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
-        printf("%s\n", ent->d_name);
+        memset(aid, 0, 4);
         strncpy(aid, ent->d_name, 3);
-        printf("%s\n", aid);
         aid[3] = '\0';
         files[count] = strdup(aid);
         count++;
     }
-
-    for (int i = 0; i < count; i++) printf("file!: %s\n", files[i]);
     return count;
 }

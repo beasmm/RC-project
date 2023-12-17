@@ -9,6 +9,11 @@
 #include "users.h"
 #include "auction.h"
 
+
+int compareStrings(const void *a, const void *b) {
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
 int login(char *buffer){
     char uid[UID_SIZE+1];
     char password[PASSWORD_SIZE+1];
@@ -138,17 +143,52 @@ int myauctions(char *buffer){
     char *aids[999];
     int n_aids = getListOfFiles(path, aids);
 
-    printf("n_aids: %d\n", n_aids);
+    qsort(aids, n_aids, sizeof(aids[0]), compareStrings);
 
     for (int i = 0; i < n_aids; i++){
-        printf("HELLO\n");
         strcat(buffer, " ");
         strcat(buffer, aids[i]);
-        printf("aid: %s\n", aids[i]);
         int id = atoi(aids[i]);
         if (checkActive(id)) strcat(buffer, " 1");
         else strcat(buffer, " 0");
-        i++;
+    }
+    strcat(buffer, "\n");
+
+    return 0;
+}
+
+int mybids(char *buffer){
+    char uid[UID_SIZE+1];
+    strncpy(uid, buffer + 4, UID_SIZE);
+    uid[UID_SIZE] = '\0';
+
+    memset(buffer, 0, 128);
+
+    if (checkLogin(uid) != 0){
+        sprintf(buffer, "RMB NLG\n");
+        return 0;
+    }
+
+    char path[30];
+    sprintf(path, "USERS/%s/BIDDED", uid);
+    
+    if(isDirectoryEmpty(path)){ //USER HAS NO BIDS
+        sprintf(buffer, "RMB NOK\n");
+        return 0;
+    }
+
+    sprintf(buffer, "RMB OK");
+    char *aids[999];
+    int n_aids = getListOfFiles(path, aids);
+
+    qsort(aids, n_aids, sizeof(aids[0]), compareStrings);
+
+    for (int i = 0; i < n_aids; i++){
+        strcat(buffer, " ");
+        strcat(buffer, aids[i]);
+        int id = atoi(aids[i]);
+        if (checkActive(id)) strcat(buffer, " 1");
+        else strcat(buffer, " 0");
     }
     strcat(buffer, "\n");
 

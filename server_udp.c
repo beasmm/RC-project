@@ -71,7 +71,7 @@ int executeCommands(char *buffer){
             myauctions(buffer);
             break;
         case CMD_MYBIDS:
-            //mybids(buffer);
+            mybids(buffer);
             break;
         case CMD_SHOW_RECORD:
             //show_record(buffer);
