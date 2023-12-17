@@ -3,6 +3,19 @@
 #include <string.h>
 
 
+int print_bids_sr(char *buffer){
+    char uid[UID_SIZE+1];
+    char value[15];
+    char date[DATE_SIZE+1];
+    char time[TIME_SIZE+1];
+    int secs = 0; 
+
+    sscanf(buffer, "B %s %s %s %s %i ", uid, value, date, time, &secs);
+
+    printf("  >  Bidder %s bid %s on %s at %s, %i seconds after the auction started\n", uid, value, date, time, secs);
+
+    return 0;
+}
 
 //Client send operations:
 int client_login(char *buffer, User *user){
@@ -70,17 +83,15 @@ int client_mybids(char *buffer){
 }
 
 int client_show_record(char *buffer){
-    char aid[10];
-    memset(aid, 0, 10);
-    sscanf(buffer, "%*s %s", aid);
+    int aid;
+    sscanf(buffer, "%*s %d", &aid);
 
-    if (strlen(aid) != 3) {
-        printf("invalid auction id\n");
+    if (aid < 1 || aid > 999) {
         return 1;
     }
 
     memset(buffer, 0, 128);
-    sprintf(buffer, "SRC %s\n", aid);
+    sprintf(buffer, "SRC %03d\n", aid);
     return 0;
 }
 
@@ -196,7 +207,70 @@ int client_mybids_answer(char *buffer){
 }
 
 int client_show_record_answer(char *buffer){//TODO
-    printf("show_record buffer: %s\n", buffer);
+    if (strcmp("NOK\n", buffer + 4) == 0) {
+        printf("auction does not exist\n");
+        return 0;
+    }
+    char host_uid[UID_SIZE+1];
+    char auction_name[NAME_SIZE+1];
+    char asset_fname[NAME_SIZE+1];
+    int start_value; //verif
+    char date[DATE_SIZE+1];
+    char time[TIME_SIZE+1];
+    int timeactive;
+    char bids[256];
+
+    sscanf(buffer, "RRC OK %s %s %s %d %s %s %d %[^\n]", 
+                    host_uid, auction_name, asset_fname, &start_value, date, time, &timeactive, bids);
+
+    printf("Auction \"%s\" hosted by %s. Asset file name: \"%s\", starting value %d. Started on %s at %s and will last %d seconds.\n", 
+            auction_name, host_uid, asset_fname, start_value, date, time, timeactive);
+
+    strcat(bids, "\n");
+
+    int n_bids = 0;
+    char aux[70];
+    memset(aux, 0, 70);
+    int i, j = 0;
+    for (i = 0; bids[i] != '\n'; i++) {
+        if (bids[i] == 'B') {
+            n_bids++;
+            if (n_bids == 1) {
+                printf("Most recent bids:\n");
+            }
+            else {
+                print_bids_sr(aux);
+                memset(aux, 0, 70);
+                j = 0;
+            }
+        }
+        else if (bids[i] == 'E') {
+            if (n_bids == 0) {
+                printf("No bids yet.\n");
+            }
+            else {
+                print_bids_sr(aux);
+                memset(aux, 0, 70);
+                j = 0;
+            }
+            break;
+        }
+        aux[j++] = bids[i];
+    }
+
+    if (bids[i] == 'E') {
+        j = 0;
+        for (i++; bids[i] != '\n'; i++) {
+            aux[j++] = bids[i];
+        }
+        sscanf(aux, "%s %s %d", date, time, &timeactive);
+        printf("Auction ended on %s at %s, after %d seconds.\n", date, time, timeactive);
+    }
+
+    else printf("Auction ongoing\n");
+
+
+
     return 1;
 }
 

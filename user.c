@@ -46,7 +46,6 @@ int main(){
     Open_ open;
     FILE *fptr;
     int open_state;
-    int login_state;
     char code[3]={0};
     char status[3]={0};
     char aid[3]={0};
