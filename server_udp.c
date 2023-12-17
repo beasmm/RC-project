@@ -17,114 +17,8 @@
 #include <stdio.h>
 
 #include "constants_udp.h"
+#include "operations_udp_server.h"
 
-
-
-int login(char *buffer){
-    char uid[UID_SIZE+1];
-    char password[PASSWORD_SIZE+1];
-
-    strncpy(uid, buffer + 4, UID_SIZE);
-    uid[UID_SIZE] = '\0';
-
-    strncpy(password, buffer + 4 + UID_SIZE + 1, PASSWORD_SIZE);
-    password[PASSWORD_SIZE] = '\0';
-
-    memset(buffer, 0, 128);
-
-    if (checkRegistered(uid) == -1) { //register new user
-        createUserDir(uid);
-        createLogin(uid);
-        createPass(uid, password);
-        sprintf(buffer, "RLI REG\n");
-        return 0;
-    }
-    else { //user already exists / has existed in the past
-        char path[30];
-        sprintf(path, "users/%s/login.txt", uid);
-        if (access(path, F_OK) != 0){ // user was registered in the past
-            createLogin(uid);
-            createPass(uid, password);
-            sprintf(buffer, "RLI REG\n");
-            return 0;
-        }
-        else if (checkPassword(uid, password) == 0) {
-            updateLogin(uid, 0);
-            sprintf(buffer, "RLI OK\n");
-            return 0;
-        }
-        else {
-            sprintf(buffer, "RLI NOK\n");
-            return 0;
-        }
-    }
-    return -1;
-}
-
-int logout(char *buffer){
-    char uid[UID_SIZE+1];
-    char password[PASSWORD_SIZE+1];
-
-    strncpy(uid, buffer + 4, UID_SIZE);
-    uid[UID_SIZE] = '\0';
-
-    strncpy(password, buffer + 4 + UID_SIZE + 1, PASSWORD_SIZE);
-    password[PASSWORD_SIZE] = '\0';
-
-    memset(buffer, 0, 128);
-
-    if (checkRegistered(uid) == -1) {
-        sprintf(buffer, "RLO UNR\n");
-        return 0;
-    }
-
-    if (checkLogin(uid) == 0) {
-        if (checkPassword(uid, password) == 0) {
-            updateLogin(uid, 1);
-            sprintf(buffer, "RLO OK\n");
-            return 0;
-        }
-        else {
-            sprintf(buffer, "RLO NOK\n");
-            return 0;
-        }
-    }
-    return -1;
-}
-
-int unregister(char *buffer){
-    char uid[UID_SIZE+1];
-    char password[PASSWORD_SIZE+1];
-
-    strncpy(uid, buffer + 4, UID_SIZE);
-    uid[UID_SIZE] = '\0';
-
-    strncpy(password, buffer + 4 + UID_SIZE + 1, PASSWORD_SIZE);
-    password[PASSWORD_SIZE] = '\0';
-
-    memset(buffer, 0, 128);
-
-    if (checkRegistered(uid) == -1) {
-        sprintf(buffer, "RUR UNR\n");
-        return 0;
-    }
-
-    if (checkLogin(uid) == 0) {
-        if (checkPassword(uid, password) == 0) {
-            eraseLogin(uid);
-            erasePass(uid);
-            sprintf(buffer, "RUR OK\n");
-            return 0;
-        }
-    }
-    else {
-        sprintf(buffer, "RUR NOK\n");
-        return 0;
-    }
-    return -1;
-}
-
-//other file
 enum Command get_command(char *buffer){
     switch(buffer[0]){
         case 'L':
@@ -162,7 +56,6 @@ enum Command get_command(char *buffer){
     }
 }
 
-
 int executeCommands(char *buffer){
     switch(get_command(buffer)){
         case CMD_LOGIN:
@@ -184,7 +77,7 @@ int executeCommands(char *buffer){
             //show_record(buffer);
             break;
         case CMD_LIST:
-            //list(buffer);
+            list(buffer);
             break;
         case CMD_EXIT:
             return 1;
@@ -193,8 +86,6 @@ int executeCommands(char *buffer){
     }
     return 0;
 }
-
-
 
 int main(){
     int fd,errcode;
@@ -219,6 +110,7 @@ int main(){
     if(n==-1) /*error*/ exit(1);
 
     initUsers();
+    initAuctions();
     
     while (1){
         addrlen = sizeof(addr);
@@ -229,9 +121,12 @@ int main(){
         write(1, "received: ", 10); write(1, buffer, n);
 
         if (executeCommands(buffer)) break;
+
+        printf("sending: %s", buffer);
         
-        n = sendto(fd, buffer, n, 0, (struct sockaddr*)&addr, addrlen);
+        n = sendto(fd, buffer, strlen(buffer), 0, (struct sockaddr*)&addr, addrlen);
         if(n==-1)/*error*/exit(1);
+
 
     }
 

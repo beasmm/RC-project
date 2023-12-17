@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <string.h>
 
+
+#include "users.h"
 
 int initAuctions(){
     struct stat st = {0};
@@ -17,6 +21,14 @@ int initAuctions(){
     return 0;
 }
 
+// returns 1 if auction is active
+int checkActive(int aid){
+    char aid_dirname[30];
+    memset(aid_dirname, 0, 30);
+    sprintf(aid_dirname, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
+
+    return access(aid_dirname, F_OK) + 1;
+}
 
 int createAuctionDir(int aid){
     char aid_dirname[15];
@@ -61,8 +73,12 @@ int checkAssetFile(char *asset_fname){
     return (filestat.st_size);
 }
 
-int main(){
-    initAuctions();
-    createAuctionDir(1);
-    return 0;
+// returns -1 if auction hasn't been starteds
+int auctionExists(int aid){
+    char path[35];
+    struct stat st = {0};
+
+    sprintf(path, "AUCTIONS/%03d", aid);
+
+    return stat(path, &st);
 }

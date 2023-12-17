@@ -171,6 +171,8 @@ int main(){
     errcode=getaddrinfo("localhost",PORT,&hints,&res);
     if(errcode!=0) /*error*/ exit(1);
 
+    user.logged_in = 0;
+
     //scanf("%s %s %s", cmd, uid, password);
 
     while(1){
@@ -191,7 +193,7 @@ int main(){
         n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
         if(n==-1) /*error*/ exit(1);
 
-        write(1,"answer: ",8); write(1, buffer, n);
+        printf("received: %s", buffer);
 
         get_answer(buffer);
 
