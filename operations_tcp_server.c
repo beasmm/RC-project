@@ -4,6 +4,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "constants.h"
 #include "users.h"
@@ -15,8 +16,8 @@ int open_server(char *buffer, int aid){
     FILE *fptr;
     Auction auction;
     User user;
-    char filename[20];
-    sscanf(buffer, "OPA %d %s %s %d %d %s %d %s\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, auction.size, auction.data);
+    char filename[50];
+    sscanf(buffer, "OPA %s %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size, auction.data);
     memset(buffer, 0, 128);
    
     if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
@@ -28,7 +29,7 @@ int open_server(char *buffer, int aid){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
             fptr = fopen(filename, "w");
             if (fptr == NULL) return 0;
-            fprintf(fptr,"%s\0", auction.data);
+            fprintf(fptr,"%s", auction.data);
             fclose(fptr);
             sprintf(buffer,"ROA %s %d\n",state[2],aid);
             return 1;
@@ -46,7 +47,7 @@ int close_server(char *buffer){
     User user;
     time_t t = time(NULL),numbe ;
     struct tm tm = *localtime(&t);
-    char filename[20];
+    char filename[50];
     int seconds = 0, se = 0;
     sscanf(buffer, "CLS %s %s %d\n",user.uid, user.password, &auction.aid);
     memset(buffer, 0, 128);
@@ -62,10 +63,10 @@ int close_server(char *buffer){
         else{
             if(auctionIsOwnedByUser(auction.aid, user.uid)==1){ //user owns auction
                 //create file on closed auctions
-                sprintf(filename,"AUCTIONS/%d/START_%d.txt", aid, aid);
+                sprintf(filename,"AUCTIONS/%d/START_%d.txt", auction.aid, auction.aid);
 
                 fptr = fopen(filename,"r");
-                fscanf(fptr,"%d %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %d\n", user.uid, auction.name, auction.asset_fname, auction.start_value, auction.timeactive, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,se);
+                fscanf(fptr,"%s %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %d\n", user.uid, auction.name, auction.asset_fname, &auction.start_value, &auction.timeactive, &tm.tm_year + 1900, &tm.tm_mon + 1,&tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec,&se);
                 fclose(fptr);
 
                 seconds = time(&t);
@@ -79,8 +80,8 @@ int close_server(char *buffer){
                     return 0;
                 }
                 else{
-                fprintf(fptr, fprintf(fptr, "%04d-%02d-%02d %02d:%02d:%02d %d\n",tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,numbe));
-                fprintf(fptr,"%s\0", auction.data);
+                fprintf(fptr, "%04d-%02d-%02d %02d:%02d:%02d %ld\n",tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,numbe);
+                fprintf(fptr,"%s", auction.data);
                 fclose(fptr);
 
                 sprintf(buffer,"RCL %s\n",state[2]); // auction closed

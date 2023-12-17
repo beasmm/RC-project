@@ -8,7 +8,7 @@ int open_server(char *buffer);
 
 int close_server(char *buffer);
 
-int show_asset_sever(char *buffer);
+int show_asset_server(char *buffer);
 
 int bid_server(char *buffer);
 

@@ -19,4 +19,8 @@ int auctionExists(int aid);
 
 int auctionIsOwnedByUser(int aid, char *uid); //returns 1 if auction is owned by user, 0 otherwise
 
+int createBid(int aid, char* uid, int bid);
+
+int createStartFile(int aid, char* buffer);
+
 #endif // AUCTION_H
