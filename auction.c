@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 
 int initAuctions(){
@@ -61,6 +62,7 @@ int checkAssetFile(char *asset_fname){
 }
 
 int main(){
+    initAuctions();
     createAuctionDir(1);
     return 0;
 }

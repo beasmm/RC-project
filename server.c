@@ -12,7 +12,10 @@
 #include <signal.h>
 #define PORT "58011"
 
-#include "constants_tcp.h"
+#include "users.h"
+
+
+//#include "constants_udp.h"
 
 int main(){
     struct addrinfo hints,*res;
@@ -24,6 +27,8 @@ int main(){
     struct sigaction act;
     int counter_auctions=0;
     char state[9][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR"};
+
+    initUsers();
 
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
