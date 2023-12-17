@@ -13,6 +13,8 @@ int getAssetFileName(char *aid, char asset_fname[]); //returns 0if no asset was 
 
 int checkAssetFile(char *asset_fname);
 
+int getAsset(char *asset_fname, char *asset_content);
+
 int auctionExists(int aid);
 
 #endif // AUCTION_H

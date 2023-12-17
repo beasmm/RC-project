@@ -104,6 +104,18 @@ int checkAssetFile(char *asset_fname){
     return (filestat.st_size);
 }
 
+int getAsset(char *asset_fname, char *content){
+    FILE *fp;
+
+    int size = checkAssetFile(asset_fname);
+    
+    fp = fopen(asset_fname, "r");
+    if (fp == NULL) return 1;
+
+    fread(content, sizeof(char), size, fp);
+
+    return 0;
+}
 // returns -1 if auction hasn't been starteds
 int auctionExists(int aid){
     char path[35];
