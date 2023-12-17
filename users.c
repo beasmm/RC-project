@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "users.h"
 #include "constants_udp.h"
@@ -157,6 +158,9 @@ int checkLogin(char *uid){
     fscanf(fptr, " %[^\n]", login);
 
     int ret = strncmp(login, "Logged in", 10);
+
+    printf("login: %s\n", login);
+    printf("ret: %d\n", ret);
 
     fclose(fptr);
     return ret;
@@ -312,13 +316,29 @@ int closeUsers(){
     return 0;
 }
 
+int getListOfFiles(char path[], char *files[]){
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        perror("Error opening directory");
+        return -1;
+    }
+    
+    strcat(path, "/");
 
-//user commands
+    struct dirent *ent;
+    char aid[4];
 
-/* int getUser(User user, char *buf){
-    strncpy(user.uid, buf, UID_SIZE);
-    user.uid[UID_SIZE] = '\0';
+    int count = 0;
+    while ((ent = readdir(dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+        printf("%s\n", ent->d_name);
+        strncpy(aid, ent->d_name, 3);
+        printf("%s\n", aid);
+        aid[3] = '\0';
+        files[count] = strdup(aid);
+        count++;
+    }
 
-    strncpy(user.password, buf + UID_SIZE + 1, PASSWORD_SIZE);
-    user.password[PASSWORD_SIZE] = '\0';
-} */
+    for (int i = 0; i < count; i++) printf("file!: %s\n", files[i]);
+    return count;
+}
