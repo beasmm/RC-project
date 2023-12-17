@@ -75,6 +75,7 @@ int client_open_answer(char *buffer){
         printf("An error occurred while opening the auction\n");
         return 0;
     }
+    return 0;
 }
 
 int client_close_answer(char *buffer){
@@ -97,6 +98,7 @@ int client_close_answer(char *buffer){
         printf("An error occurred while closing the auction\n");
         return 0;
     }
+    return 0;
 }
 
 int client_show_asset_answer(char *buffer){
@@ -112,6 +114,7 @@ int client_show_asset_answer(char *buffer){
         printf("An error occurred while showing asset\n");
         return 0;
     }
+    return 0;
 }
 
 int client_bid_answer(char *buffer){
@@ -139,4 +142,5 @@ int client_bid_answer(char *buffer){
         printf("An error occurred while showing asset\n");
         return 0;
     }
+    return 0;
 }
