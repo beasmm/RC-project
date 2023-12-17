@@ -12,11 +12,11 @@
 char state[10][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR","EOW"};
 int aid;
 
-int open(char *buffer){
+int open_server(char *buffer){
     FILE *fptr;
     Auction auction;
     User user;
-    sscanf(buffer, "OPA %d %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name,&auction.start_value, &auction.timeactive, auction.asset_fname);
+    sscanf(buffer, "OPA %s %s %s %d %d %s\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname);
     memset(buffer, 0, 128);
    
     if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
@@ -36,10 +36,10 @@ int open(char *buffer){
     }
 }
 
-int close(char *buffer){
+int close_server(char *buffer){
     Auction auction;
     User user;
-    sscanf(buffer, "CLS %d %s %d\n",user.uid, user.password, &auction.aid);
+    sscanf(buffer, "CLS %s %s %d\n",user.uid, user.password, &auction.aid);
     memset(buffer, 0, 128);
     if(auctionExists(auction.aid)==-1){
         sprintf(buffer,"RCL %s\n",state[3]); // auction doesnt exist
@@ -53,7 +53,7 @@ int close(char *buffer){
         else{
             if(auctionIsOwnedByUser(auction.aid, user.uid)==1){ //user owns auction
                 //create file on closed auctions
-                if(){ //delete auction
+                if(1){ //delete auction
                     sprintf(buffer,"RCL %s\n",state[2]); // auction closed
                     return 1;
                 }
@@ -70,12 +70,14 @@ int close(char *buffer){
     }
 }
 
-int show_asset(char *buffer){
+int show_asset_server(char *buffer){
     Auction auction;
     sscanf(buffer, "SAS %d\n",&auction.aid);
     memset(buffer, 0, 128);
-    if(getAssetFileName(auction.aid,auction.asset_fname)!=0){ //can find asset
-        auction.size = checkAssetFile(auction.asset_fname);
+    char straid[4] = {0};
+    sprintf(straid,"%03d",auction.aid);
+    if(getAssetFileName(straid, auction.asset_fname)!=0){ //can find asset
+        auction.size = checkAssetFile(straid);
         getAsset(auction.asset_fname,auction.data);
         sprintf(buffer,"RSA %s %s %ld %s\n",state[2], auction.asset_fname, auction.size, auction.data);
         return 1;
@@ -86,11 +88,11 @@ int show_asset(char *buffer){
     }
 }
 
-int bid(char *buffer){
+int bid_server(char *buffer){
     Auction auction;
     User user;
     int bid;
-    sscanf(buffer, "BID %d %s %d %d\n",&user.uid, user.password, &auction.aid, bid);
+    sscanf(buffer, "BID %s %s %d %d\n", user.uid, user.password, &auction.aid, &bid);
     memset(buffer, 0, 128);
 
     if(auctionExists(auction.aid)==-1 || checkActive(auction.aid)!=1){
@@ -105,7 +107,7 @@ int bid(char *buffer){
         sprintf(buffer,"RBD %s\n",state[7]); //bid in own auction
         return 0;
     }
-    else if(){ //check if there is a bigger bid
+    else if(1){ //check if there is a bigger bid
         sprintf(buffer,"RBD %s\n",state[6]); //bid refused
         return 0;
     }

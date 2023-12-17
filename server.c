@@ -13,6 +13,8 @@
 #define PORT "58011"
 
 #include "users.h"
+#include "auction.h"
+#include "constants.h"
 
 
 //#include "constants_udp.h"
