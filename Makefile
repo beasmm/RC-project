@@ -5,20 +5,23 @@ CFLAGS = -g -std=c17 -D_POSIX_C_SOURCE=200809L \
 		 -Wall -Werror -Wextra 
 
 
-all: user server
+all: client server_udp server_tcp
 
-user: user_udp.c 
-	$(CC) $(CFLAGS) $(SLEEP) -o udp user_udp.c operations_udp_client.c 
+client: client.c 
+	$(CC) $(CFLAGS) $(SLEEP) -o client client.c operations_udp_client.c operations_tcp_client.c
 
-server: server_udp.c users.c
+server_udp: server_udp.c users.c
 	$(CC) $(CFLAGS) $(SLEEP) -o server_udp server_udp.c users.c operations_udp_server.c auction.c
+
+server_tcp: server_tcp.c users.c
+	$(CC) $(CFLAGS) $(SLEEP) -o server_tcp server_tcp.c users.c operations_tcp_server.c auction.c
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c ${@:.o=.c}
 
 
 clean:
-	rm -f *.o udp server_udp
+	rm -f *.o client server_udp
 
 format:
 	@which clang-format >/dev/null 2>&1 || echo "Please install clang-format to run this command"

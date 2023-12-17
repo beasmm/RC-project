@@ -248,6 +248,9 @@ int main(){
 
         else { // case tcp
             printf("sending tcp\n");
+            n=connect(fd_tcp,res->ai_addr,res->ai_addrlen);
+            if(n==-1)/*error*/exit(1);
+
             n=write(fd_tcp,buffer,128);
             if(n==-1) exit(1);
 
@@ -255,6 +258,7 @@ int main(){
             
             n=read(fd_tcp,buffer,128);
             if(n==-1) exit(1);
+            close(fd_tcp);
         }
 
         printf("received: %s", buffer);
@@ -267,6 +271,6 @@ int main(){
 
     }
     freeaddrinfo(res);
-    close(fd_udp); close(fd_tcp);
+    close(fd_udp);
     return 0;
 }
