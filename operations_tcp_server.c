@@ -52,7 +52,7 @@ int close(char *buffer){
             return 0;
         }
         else{
-            if(){ //user owns auction
+            if(auctionIsOwnedByUser(auction.aid, user.uid)==1){ //user owns auction
                 //create file on closed auctions
                 if(){ //delete auction
                     sprintf(buffer,"RCL %s\n",state[2]); // auction closed
@@ -102,8 +102,16 @@ int bid(char *buffer){
         sprintf(buffer,"RBD %s\n",state[1]); //user not logged in
         return 0;
     }
-    else if(){ //check if user owns auction
-        sprintf(buffer,"RBD %s\n",state[1]); //user not logged in
+    else if(auctionIsOwnedByUser(auction.aid, user.uid)==1){ //check if user owns auction
+        sprintf(buffer,"RBD %s\n",state[7]); //bid in own auction
         return 0;
+    }
+    else if(){ //check if there is a bigger bid
+        sprintf(buffer,"RBD %s\n",state[6]); //bid refused
+        return 0;
+    }
+    else{
+        sprintf(buffer,"RBD %s\n",state[5]); //bid accepted
+        return 1;
     }
 }
