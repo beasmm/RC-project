@@ -17,4 +17,6 @@ int getAsset(char *asset_fname, char *asset_content);
 
 int auctionExists(int aid);
 
+int auctionIsOwnedByUser(int aid, char *uid); //returns 1 if auction is owned by user, 0 otherwise
+
 #endif // AUCTION_H

@@ -125,3 +125,16 @@ int auctionExists(int aid){
 
     return stat(path, &st);
 }
+
+int auctionIsOwnedByUser(int aid, char *uid){
+    char path[35];
+    struct stat st = {0};
+
+    sprintf(path, "USERS/%s/HOSTED/%03d.txt", uid, aid);
+
+    int ret = stat(path, &st);
+
+    if (ret == -1) return 0;
+
+    return 1;
+}
