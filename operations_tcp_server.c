@@ -75,8 +75,35 @@ int show_asset(char *buffer){
     Auction auction;
     sscanf(buffer, "SAS %d\n",&auction.aid);
     memset(buffer, 0, 128);
-    if(){ //can find asset
-        sprintf(buffer,"RSA %s \n",state[2]); // user doesnt own auction
+    if(getAssetFileName(auction.aid,auction.asset_fname)!=0){ //can find asset
+        auction.size = checkAssetFile(auction.asset_fname);
+        getAsset(auction.asset_fname,auction.data);
+        sprintf(buffer,"RSA %s %s %ld %s\n",state[2], auction.asset_fname, auction.size, auction.data);
+        return 1;
+    }
+    else{
+        sprintf(buffer,"RSA %s\n",state[0]); //cant find asset
+        return 0;
+    }
+}
+
+int bid(char *buffer){
+    Auction auction;
+    User user;
+    int bid;
+    sscanf(buffer, "BID %d %s %d %d\n",&user.uid, user.password, &auction.aid, bid);
+    memset(buffer, 0, 128);
+
+    if(auctionExists(auction.aid)==-1 || checkActive(auction.aid)!=1){
+        sprintf(buffer,"RBD %s\n",state[0]); //auction not active
+        return 0;
+    }
+    else if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
+        sprintf(buffer,"RBD %s\n",state[1]); //user not logged in
+        return 0;
+    }
+    else if(){ //check if user owns auction
+        sprintf(buffer,"RBD %s\n",state[1]); //user not logged in
         return 0;
     }
 }
