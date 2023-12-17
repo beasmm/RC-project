@@ -34,7 +34,12 @@ int close(char *buffer){
     User user;
     sscanf(buffer, "CLS %d %s %d\n",user.uid, user.password, auction.aid);
     memset(buffer, 0, 128);
-   
+    if(checkActive(auction.aid)==1){ //vai fechar
+
+    }
+    else{
+        sprintf(buffer,"RCL %s\n",state[4]); // auction has already finished
+    }
     sprintf(buffer,"RCL %s\n",state[3]); // auction doesnt exist
     sprintf(buffer,"RCL %s\n",state[9]); // auction is not owned by user
     sprintf(buffer,"RCL %s\n",state[4]); // auction has already finished
