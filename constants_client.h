@@ -5,6 +5,11 @@
 #define UID_SIZE 6
 #define PASSWORD_SIZE 8
 
+//AUCTION
+#define NAME_SIZE 15
+#define DATE_SIZE 10
+#define TIME_SIZE 8
+
 #define CASE_LOGIN 0
 #define CASE_LOGOUT 1
 #define CASE_UNREGISTER 2
