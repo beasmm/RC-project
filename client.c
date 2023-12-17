@@ -9,7 +9,7 @@
 #include <netdb.h>
 #include <signal.h>
 
-#include "constants_client.h"
+#include "constants.h"
 #include "operations_tcp_client.h"
 #include "operations_udp_client.h"
 
@@ -228,7 +228,7 @@ int main(){
     hints.ai_family=AF_INET; //IPv4
     hints.ai_socktype=SOCK_DGRAM; //UDP socket
     
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res);
+    errcode=getaddrinfo("localhost",PORT,&hints,&res);
     if(errcode!=0) /*error*/ exit(1);
 
     user.logged_in = 0;
