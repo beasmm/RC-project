@@ -26,3 +26,9 @@ enum Command{
     CMD_EXIT,
     CMD_ERROR,
 };
+
+typedef struct User{
+    char uid[10];
+    char password[10];
+    int logged_in;
+}User;

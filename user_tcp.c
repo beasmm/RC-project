@@ -9,6 +9,7 @@
 #include <netdb.h>
 
 #include "constants_tcp.h"
+#include "constants_udp.h"
 #include "operations_tcp_client.h"
 
 //global variables
@@ -33,18 +34,21 @@ enum Command get_client_cmd_tcp(char *buffer){
     }
 }
 
-int execute_cmd_client_tcp(char *buffer){
+int execute_cmd_client_tcp(char *buffer, Auction auction, User *user){
     switch(get_client_cmd_tcp(buffer)){
         case CMD_OPA:
+            return client_open(buffer,auction, user);
         case CMD_CLS:
+            return client_close(buffer,auction, user);
         case CMD_SAS:
+            return client_show_asset(buffer, auction);
         case CMD_BID:
+            return client_bid(buffer, auction, user);
         case CMD_EXIT:
-            exit(0);
             return 0;
         default:
             printf("Invalid command\n");
-            return 1;
+            return -1;
     }
 }
 
@@ -66,9 +70,13 @@ enum Command get_answer_cmd_tcp(char *buffer){
 int get_answer_tcp(char *buffer){
     switch(get_answer_cmd_tcp(buffer)){
         case CMD_OPA:
+            return client_open_answer(buffer);
         case CMD_CLS:
+            return client_close_answer(buffer);
         case CMD_SAS:
+            return client_show_asset_answer(buffer);
         case CMD_BID:
+            return client_bid_answer(buffer);
         default:
             printf("Invalid command\n");
             break;

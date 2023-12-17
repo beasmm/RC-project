@@ -2,8 +2,9 @@
 #include <string.h>
 #include "constants_tcp.h"
 
+
 //Client send operations:
-int client_open(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
+int client_open(char *buffer, Auction auction, User user){
     FILE *fptr;
     sscanf(buffer, "open %s %s %d %d\n",auction.name,auction.asset_fname,&auction.start_value,&auction.timeactive);
 
@@ -22,16 +23,16 @@ int client_open(char *buffer, Auction auction, int uid, char password[PASSWORD_S
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"OPA %d %s %s %d %d %s %ln %s\n", uid, password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
+    sprintf(buffer,"OPA %d %s %s %d %d %s %ln %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, &auction.size, auction.data);
     return 0;
 }
 
-int client_close(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
+int client_close(char *buffer, Auction auction, User user){
     sscanf(buffer, "close %d\n", &auction.aid);
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"CLS %d %s %d\n",uid, password, auction.aid);
+    sprintf(buffer,"CLS %d %s %d\n",user.uid, user.password, auction.aid);
     return 0;
 }
 
@@ -45,14 +46,14 @@ int client_show_asset(char *buffer, Auction auction){
     return 0;
 }
 
-int client_bid(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
+int client_bid(char *buffer, Auction auction, User user){
     int bid;
     if(buffer[1]=='i') sscanf(buffer, "bid %d\n", &bid);
     else sscanf(buffer, "b %d\n", &bid);
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"BID %d %s %d %d\n", uid, password, auction.aid, bid);
+    sprintf(buffer,"BID %d %s %d %d\n", user.uid, user.password, auction.aid, bid);
     return 0;
 }
 
