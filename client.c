@@ -198,9 +198,6 @@ int main(){
     struct addrinfo hints,*res;
     struct sockaddr_in addr;
 
-    char code[3]={0};
-    char status[3]={0};
-    char aid[3]={0};
     struct sigaction act;
 
     memset(&act,0,sizeof act);

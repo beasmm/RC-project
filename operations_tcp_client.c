@@ -32,7 +32,7 @@ int client_close(char *buffer, Auction auction, User user){
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"CLS %s %s %d\n",user.uid, user.password, auction.aid);
+    sprintf(buffer,"CLS %s %s %03d\n",user.uid, user.password, auction.aid);
     return 0;
 }
 
@@ -42,7 +42,7 @@ int client_show_asset(char *buffer, Auction auction){
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"SAS %d\n", auction.aid);
+    sprintf(buffer,"SAS %03d\n", auction.aid);
     return 0;
 }
 
@@ -53,7 +53,7 @@ int client_bid(char *buffer, Auction auction, User user){
 
     memset(buffer, 0, 128);
 
-    sprintf(buffer,"BID %s %s %d %d\n", user.uid, user.password, auction.aid, bid);
+    sprintf(buffer,"BID %s %s %03d %d\n", user.uid, user.password, auction.aid, bid);
     return 0;
 }
 
@@ -75,6 +75,7 @@ int client_open_answer(char *buffer){
         printf("An error occurred while opening the auction\n");
         return 0;
     }
+    return 0;
 }
 
 int client_close_answer(char *buffer){
@@ -97,6 +98,7 @@ int client_close_answer(char *buffer){
         printf("An error occurred while closing the auction\n");
         return 0;
     }
+    return 0;
 }
 
 int client_show_asset_answer(char *buffer){
@@ -112,6 +114,7 @@ int client_show_asset_answer(char *buffer){
         printf("An error occurred while showing asset\n");
         return 0;
     }
+    return 0;
 }
 
 int client_bid_answer(char *buffer){
@@ -139,4 +142,5 @@ int client_bid_answer(char *buffer){
         printf("An error occurred while showing asset\n");
         return 0;
     }
+    return 0;
 }
