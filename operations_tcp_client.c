@@ -1,7 +1,6 @@
-
-#include "constants_tcp.h"
 #include <stdio.h>
 #include <string.h>
+#include "constants_tcp.h"
 
 //Client send operations:
 int client_open(char *buffer, Auction auction, int uid, char password[PASSWORD_SIZE]){
@@ -15,7 +14,6 @@ int client_open(char *buffer, Auction auction, int uid, char password[PASSWORD_S
     }
     else{
         fseek(fptr, 0, SEEK_END);                         //find size of file
-        sprintf(auction.size,"%ld",ftell(fptr)+1);
         auction.size = ftell(fptr)+1;
         fseek(fptr, 0, SEEK_SET);                         //find begining of file
         fread(auction.data, auction.size, 1,fptr);
