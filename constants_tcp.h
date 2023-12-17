@@ -1,3 +1,4 @@
+#include <cstddef>
 #define FNAME 24
 #define FSIZE 8
 #define CODE_SIZE 4
@@ -15,7 +16,6 @@ typedef struct{
     size_t size;
     char data[15];
     int aid;
-    int higher_value;
 }Auction;
 
 enum Command{
