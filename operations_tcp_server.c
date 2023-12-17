@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "constants_tcp.h"
+#include "constants_udp.h"
 #include "users.h"
 #include "auction.h"
 
@@ -18,17 +19,7 @@ int open(char *buffer){
     User user;
     sscanf(buffer, "OPA %d %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name,&auction.start_value, &auction.timeactive, auction.asset_fname);
     memset(buffer, 0, 128);
-    fptr = fopen(auction.asset_fname,"r");
-    if(fptr == NULL){
-        sprintf(buffer,"ROA %s\n",state[0]);
-        return 0;
-    }
-    else{
-        fseek(fptr, 0, SEEK_END);                         //find size of file
-        auction.size = ftell(fptr)+1;
-        fseek(fptr, 0, SEEK_SET);                         //find begining of file
-        fread(open.data, auction.size, 1,fptr);
-        fclose(fptr);
+   
     }
     //verificar uid e password
     sprintf(buffer,"ROA %s\n",state[1]); //user not logged in
@@ -40,5 +31,6 @@ int open(char *buffer){
 
 int close(char *buffer){
     Auction auction;
+    User user;
     sscanf(buffer, "CLS %d %s %d\n",auction.)
 }
