@@ -158,7 +158,7 @@ int checkLogin(char *uid){
     fscanf(fptr, " %[^\n]", login);
 
     int ret = strncmp(login, "Logged in", 10);
-    
+
     fclose(fptr);
     return ret;
 }
@@ -323,16 +323,30 @@ int getListOfFiles(char path[], char *files[]){
     strcat(path, "/");
 
     struct dirent *ent;
-    char aid[4];
 
     int count = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
-        memset(aid, 0, 4);
-        strncpy(aid, ent->d_name, 3);
-        aid[3] = '\0';
-        files[count] = strdup(aid);
+        files[count] = strdup(ent->d_name);
         count++;
     }
     return count;
+}
+
+
+int getHost(int aid){
+    char path[30] = "USERS";
+    char *users[999];
+
+    int n_dir = getListOfFiles(path, users);
+
+    for(int i = 0; i < n_dir; i++){
+        printf("name: %s\n", users[i]);
+    }
+
+    for (int i = 0; i < n_dir; i++){
+        sprintf(path, "USERS/%s/HOSTED/%03d.txt", users[i], aid);
+        if (access(path, F_OK) == 0) return atoi(users[i]);
+    }
+    return -1;
 }
