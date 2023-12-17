@@ -16,7 +16,6 @@ typedef struct{
     char data[15];
     int aid;
     int higher_value;
-
 }Auction;
 
 enum Command{
