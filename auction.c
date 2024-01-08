@@ -65,6 +65,14 @@ int createAuctionDir(int aid){
     return 1;
 }
 
+int createAssetFile(char *filename){
+    FILE *fptr;
+    fptr = fopen(filename, "w");
+    if (fptr == NULL) return 0;
+    fclose(fptr);
+    return 1;
+}
+
 int getAssetFileName(char *aid, char asset_fname[]){ //returns 0 if no asset was found
     char asset_dirname[30];
     char full_path[300];
@@ -196,12 +204,15 @@ int writeAuctionData(int aid, char *data){
     FILE *fptr;
     char straid[4];
 
+    printf("aid: %03d\n", aid);
+    printf("data: %s\n", data);
+
     sprintf(straid, "%03d", aid);
 
     getAssetFileName(straid, file_name);
 
     sprintf(file_path, "AUCTIONS/%03d/ASSET/%s", aid, file_name);
-    fptr = fopen(file_name, "w");
+    fptr = fopen(file_path, "w");
     if(fptr == NULL) return 0;
     fprintf(fptr, "%s", data);
     fclose(fptr);

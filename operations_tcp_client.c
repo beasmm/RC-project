@@ -63,8 +63,8 @@ int client_open(char *buffer, Auction auction, User user, char img_name[], long 
     else{
         auction.size = checkAssetSize(path);
         auction.data = malloc(auction.size);
-        printf("data: %s\n", auction.data);
         getAssetData(path, auction.data, auction.size);
+        printf("data: %s\n", auction.data);
     }
 
     strcpy(img_name, path);
@@ -76,6 +76,9 @@ int client_open(char *buffer, Auction auction, User user, char img_name[], long 
 
     sprintf(buffer,"OPA %s %s %s %d %d %s %ld \n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size);
     printf("buffer open: %s\n", buffer);
+
+    memset(auction.asset_fname, 0, 24);
+    memset(auction.name, 0, 15);
     return 0;
 }
 

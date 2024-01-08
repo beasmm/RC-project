@@ -27,6 +27,7 @@ int open_server(char *buffer, int aid){
     else{
         if(createAuctionDir(aid)==1 && createStartFile(aid, buffer)==1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
+            createAssetFile(filename);
             sprintf(buffer,"ROA OK %d\n", aid);
             printf("buffer open:%s\n",buffer);
             return auction.size;

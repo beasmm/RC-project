@@ -9,6 +9,8 @@ int checkActive(int aid);
 
 int createAuctionDir(int aid);
 
+int createAssetFile(char *asset_fname);
+
 int getAssetFileName(char *aid, char asset_fname[]); //returns 0if no asset was found
 
 int checkAssetFile(char *asset_fname);
