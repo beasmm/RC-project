@@ -21,9 +21,7 @@
 
 #include "users.h"
 #include "auction.h"
-#include "constants.h"
-#include "operations_tcp_server.h"
-#include "operations_udp_server.h"
+#include "operations_server.h"
 
 int n_auctions = 1;
 int read_file = 0;
@@ -216,6 +214,7 @@ int main() {
                     memset(temp_buffer, 0, sizeof(temp_buffer));
                 }
                 printf("Sending: %s\n",buffer);
+                printf("HELL\n");
                 n=write(newfd, buffer, MAXLINE);
                 if(n==-1) exit(1);
 			} 

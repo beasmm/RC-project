@@ -150,22 +150,24 @@ int auctionIsOwnedByUser(int aid, char *uid){
     return 1;
 }
 
-int createStartFile(int aid, char* buffer){
+int createStartFile(int aid, char uid[], Auction *auction){
     printf("aid: %03d\n", aid);
     char file_name[35];
     FILE *fptr;
-    Auction auction;
-    User user;
+
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    auction.aid = aid;
-    sscanf(buffer, "OPA %hhd %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name,&auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size, auction.data);
+    auction->aid = aid;
+
+    printf("creating startfile: name %s, fname: %s, start value %d, timeactive %d\n", auction->name, auction->asset_fname, auction->start_value, auction->timeactive);
 
     sprintf(file_name, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
     printf("file_name: %s\n", file_name);
     fptr = fopen(file_name, "w");
     if(fptr == NULL) return 0;
-    fprintf(fptr, "%s %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %ld\n", user.uid, auction.name, auction.asset_fname, auction.start_value, auction.timeactive, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,time(&t));
+    fprintf(fptr, "%s %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %ld\n", uid, auction->name, auction->asset_fname, 
+            auction->start_value, auction->timeactive, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, 
+            tm.tm_min, tm.tm_sec,time(&t));
     return 1;
 }
 

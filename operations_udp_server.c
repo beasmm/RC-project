@@ -5,8 +5,6 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-
-#include "constants.h"
 #include "users.h"
 #include "auction.h"
 

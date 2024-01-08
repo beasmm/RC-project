@@ -1,7 +1,7 @@
 #ifndef AUCTION_H
 #define AUCTION_H
 
-#include <stdio.h>
+#include "constants.h"
 
 int initAuctions();
 
@@ -23,7 +23,7 @@ int auctionIsOwnedByUser(int aid, char *uid); //returns 1 if auction is owned by
 
 int createBid(int aid, char* uid, int bid);
 
-int createStartFile(int aid, char* buffer);
+int createStartFile(int aid, char uid[], Auction *auction);
 
 int writeAuctionData(int aid, char* buffer);
 

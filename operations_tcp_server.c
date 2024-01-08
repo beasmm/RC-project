@@ -6,30 +6,34 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "constants.h"
 #include "users.h"
 #include "auction.h"
 
 char state[10][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR","EOW"};
 
 int open_server(char *buffer, int aid){
+    //Verify user details
     printf("entering open\n");
     Auction auction;
     User user;
     char filename[50];
     sscanf(buffer, "OPA %s %s %s %d %d %s %ld \n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size);
     memset(buffer, 0, 128);
+
+    printf("auction.name: %s\n", auction.name);
+    printf("auction.start_value: %d\n", auction.start_value);
+    printf("auction.timeactive: %d\n", auction.timeactive);
+    printf("auction.asset_fname: %s\n", auction.asset_fname);
    
     if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
         sprintf(buffer,"ROA NLG\n"); //user not logged in
         return 0;
     }
     else{
-        if(createAuctionDir(aid)==1 && createStartFile(aid, buffer)==1 && addToHosted(aid, user.uid)){
+        if(createAuctionDir(aid)==1 && createStartFile(aid, user.uid, &auction)==1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
             createAssetFile(filename);
             sprintf(buffer,"ROA OK %d\n", aid);
-            printf("buffer open:%s\n",buffer);
             return auction.size;
         }
         else{

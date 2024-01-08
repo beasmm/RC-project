@@ -9,9 +9,7 @@
 #include <netdb.h>
 #include <signal.h>
 
-#include "constants.h"
-#include "operations_tcp_client.h"
-#include "operations_udp_client.h"
+#include "operations_client.h"
 
 #define PORT "58011"
 

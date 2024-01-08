@@ -1,5 +1,6 @@
-#ifndef OPERATIONS_UPD_SERVER_H
-#define OPERATIONS_UPD_SERVER_H
+#ifndef OPERATIONS_SERVER_H
+#define OPERATIONS_SERVER_H
+
 
 int compareStrings(const void *a, const void *b);
 
@@ -12,4 +13,12 @@ int show_record(char *buffer);
 int mybids(char *buffer);
 int list(char *buffer);
 
-#endif // OPERATIONS_UPD_SERVER_H
+int open_server(char *buffer, int aid);
+
+int close_server(char *buffer);
+
+int show_asset_server(char *buffer);
+
+int bid_server(char *buffer);
+
+#endif // OPERATIONS_SERVER_H
