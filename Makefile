@@ -19,6 +19,8 @@ AS: AS.c
 
 clean:
 	rm -f *.o user AS
+
+delete:
 	rm -r USERS AUCTIONS
 
 format:
