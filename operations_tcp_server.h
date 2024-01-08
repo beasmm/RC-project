@@ -4,7 +4,7 @@
 extern char state[10][3];
 extern int aid;
 
-int open_server(char *buffer);
+int open_server(char *buffer, int aid);
 
 int close_server(char *buffer);
 

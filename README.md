@@ -1,2 +1,0 @@
-# RC-project
-projeto rc

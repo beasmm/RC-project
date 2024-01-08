@@ -61,10 +61,11 @@ int createAuctionDir(int aid){
         rmdir(bids_dirname);
         return 0;
     }
+    printf("Auction created\n");
     return 1;
 }
 
-int getAssetFileName(char *aid, char asset_fname[]){ //returns 0if no asset was found
+int getAssetFileName(char *aid, char asset_fname[]){ //returns 0 if no asset was found
     char asset_dirname[30];
     char full_path[300];
     DIR *dir;
@@ -142,6 +143,7 @@ int auctionIsOwnedByUser(int aid, char *uid){
 }
 
 int createStartFile(int aid, char* buffer){
+    printf("aid: %03d\n", aid);
     char file_name[35];
     FILE *fptr;
     Auction auction;
@@ -151,7 +153,8 @@ int createStartFile(int aid, char* buffer){
     auction.aid = aid;
     sscanf(buffer, "OPA %hhd %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name,&auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size, auction.data);
 
-    sprintf(file_name, "AUCTIONS/%d/START_%d.txt", aid, aid);
+    sprintf(file_name, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    printf("file_name: %s\n", file_name);
     fptr = fopen(file_name, "w");
     if(fptr == NULL) return 0;
     fprintf(fptr, "%s %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %ld\n", user.uid, auction.name, auction.asset_fname, auction.start_value, auction.timeactive, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,time(&t));
@@ -184,5 +187,23 @@ int createBid(int aid, char* uid, int bid){
     
     fclose(fptr);
 
+    return 1;
+}
+
+int writeAuctionData(int aid, char *data){
+    char file_path[128];
+    char file_name[35];
+    FILE *fptr;
+    char straid[4];
+
+    sprintf(straid, "%03d", aid);
+
+    getAssetFileName(straid, file_name);
+
+    sprintf(file_path, "AUCTIONS/%03d/ASSET/%s", aid, file_name);
+    fptr = fopen(file_name, "w");
+    if(fptr == NULL) return 0;
+    fprintf(fptr, "%s", data);
+    fclose(fptr);
     return 1;
 }

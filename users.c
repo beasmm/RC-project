@@ -183,6 +183,19 @@ int checkPassword(char *uid, char *pass){
     return ret;
 }
 
+int addToHosted(int aid, char uid[6]){
+    char file_path[128];
+    FILE *fp;
+
+    sprintf(file_path, "USERS/%s/HOSTED/%03d.txt", uid, aid);
+    fp = fopen(file_path, "w");
+    if(fp == NULL) return 0;
+    
+    fclose(fp);
+
+    return 1;
+}
+
 int eraseHosted(char *uid, char *aid){
     char path[35];
 

@@ -26,6 +26,8 @@ int checkLogin(char *uid);
  */
 int checkPassword(char *uid, char *pass);
 
+int addToHosted(int aid, char uid[6]);
+
 int eraseHosted(char *uid, char *aid);
 
 int eraseBidded(char *uid, char *aid);

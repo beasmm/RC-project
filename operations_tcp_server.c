@@ -13,29 +13,27 @@
 char state[10][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR","EOW"};
 
 int open_server(char *buffer, int aid){
-    FILE *fptr;
+    printf("entering open\n");
     Auction auction;
     User user;
     char filename[50];
-    sscanf(buffer, "OPA %s %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size, auction.data);
+    sscanf(buffer, "OPA %s %s %s %d %d %s %ld \n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size);
     memset(buffer, 0, 128);
    
     if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
-        sprintf(buffer,"ROA %s\n",state[1]); //user not logged in
+        sprintf(buffer,"ROA NLG\n"); //user not logged in
         return 0;
     }
     else{
-        if(createAuctionDir(aid)==1 && createStartFile(aid, buffer)==1){
+        if(createAuctionDir(aid)==1 && createStartFile(aid, buffer)==1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
-            fptr = fopen(filename, "w");
-            if (fptr == NULL) return 0;
-            fprintf(fptr,"%s", auction.data);
-            fclose(fptr);
-            sprintf(buffer,"ROA %s %d\n",state[2],aid);
-            return 1;
+            sprintf(buffer,"ROA OK %d\n", aid);
+            printf("buffer open:%s\n",buffer);
+            return auction.size;
         }
         else{
-            sprintf(buffer,"ROA %s\n",state[0]); //auction could not be started
+            printf("not okay\n");
+            sprintf(buffer,"ROA NOK\n"); //auction could not be started
             return 0;
         }
     }

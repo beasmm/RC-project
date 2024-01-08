@@ -21,6 +21,7 @@ Auction auction;
 int send_udp;
 long int bytes_img = 0;
 char img_name[128] = {0};
+int loop = 1;
 
 
 enum Command get_client_command(char *buffer){
@@ -38,9 +39,9 @@ enum Command get_client_command(char *buffer){
                 return CMD_UNREGISTER;
             else return CMD_ERROR;
         case 'm':
-            if ((buffer[1] == 'a' && buffer[2] == ' ') || strncmp("myauctions", buffer, 10) == 0)
+            if ((buffer[1] == 'a') || strncmp("myauctions", buffer, 10) == 0)
                 return CMD_MYAUCTIONS;
-            else if ((buffer[1] == 'b' && buffer[2] == ' ') || strncmp("mybids", buffer, 6) == 0)
+            else if ((buffer[1] == 'b') || strncmp("mybids", buffer, 6) == 0)
                 return CMD_MYBIDS;
             else return CMD_ERROR;
         case 's':
@@ -96,21 +97,24 @@ int execute_commands_client(char *buffer){
         case CMD_CLS:
             send_udp = 0;
             bytes_img = 0;
-            return client_close(buffer, auction, user);
+            client_close(buffer, auction, user);
+            return 0;
         case CMD_SAS:
             send_udp = 0;
             bytes_img = 0;
-            return client_show_asset(buffer, auction);
+            client_show_asset(buffer, auction);
+            return 0;
         case CMD_BID:
             send_udp = 0;
             bytes_img = 0;
-            return client_bid(buffer, user);
+            client_bid(buffer, user);
+            return 0;
         case CMD_EXIT:
             if (user.logged_in) {
                 printf("please logout first\n");
                 return 1;
             }
-            else exit(0);
+            else loop = 0;
             return 0;
         default:
             printf("Invalid command: %s\n", buffer);
@@ -239,16 +243,14 @@ int main(){
 
     user.logged_in = 0;
 
-    int do_continue = 0;
-    while(do_continue == 0){
+
+    while(loop){
         memset(buffer, 0, sizeof(buffer));
         scanf(" %[^\n]", buffer);
         
-        do_continue = execute_commands_client(buffer);
+        int do_continue = execute_commands_client(buffer);
 
         if (do_continue) continue;
-
-        printf("command: %s", buffer);
 
         if (send_udp) { //case udp
             n=sendto(fd_udp, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
@@ -263,11 +265,10 @@ int main(){
 
         else { // case tcp
             n=connect(fd_tcp,res->ai_addr,res->ai_addrlen);
-            if(n==-1)/*error*/exit(1);
-
+            if(n==-1)/*error*/ exit(1);
+            
             n=write(fd_tcp,buffer,MAXLINE);
             if(n==-1) exit(1);
-
             memset(buffer, 0, MAXLINE);
 
             if (bytes_img > 0) {
@@ -277,17 +278,17 @@ int main(){
                     continue;
                 }
                 size_t bytesRead;
-                while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+                while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) { //send image
                     n=write(fd_tcp,buffer,MAXLINE);
+                    memset(buffer, 0, MAXLINE);
+                    if (bytesRead == bytes_img) break;
                 }
+                n=read(fd_tcp,buffer,MAXLINE);
+                if(n==-1) exit(1);
+                close(fd_tcp);
             }
             
-            n=read(fd_tcp,buffer,MAXLINE);
-            if(n==-1) exit(1);
-            close(fd_tcp);
         }
-
-        printf("received: %s", buffer);
 
         execute_answer_client(buffer);
 

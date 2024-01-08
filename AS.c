@@ -10,6 +10,12 @@
 #include <sys/types.h> 
 #include <unistd.h> 
 #include <netdb.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <time.h>
+
 #define PORT 58011
 
 
@@ -18,6 +24,9 @@
 #include "constants.h"
 #include "operations_tcp_server.h"
 #include "operations_udp_server.h"
+
+int n_auctions = 1;
+int read_file = 0;
 
 int max(int x, int y) 
 { 
@@ -33,7 +42,6 @@ enum Command get_command(char *buffer){
             if (buffer[1] == 'I' && buffer[2] == 'N')
                 return CMD_LOGIN;
             else if (buffer[1] == 'O' && buffer[2] == 'U'){
-                printf("logout\n");
                 return CMD_LOGOUT;
             }
             else if (buffer[1] == 'S' && buffer[2] == 'T')
@@ -82,6 +90,7 @@ enum Command get_command(char *buffer){
 }
 
 int executeCommands(char *buffer){
+    int ret = 0;
     switch(get_command(buffer)){
         case CMD_LOGIN:
             login(buffer);
@@ -99,13 +108,15 @@ int executeCommands(char *buffer){
             mybids(buffer);
             break;
         case CMD_SHOW_RECORD:
-            show_record(buffer);
+            ret = show_record(buffer);
             break;
         case CMD_LIST:
             list(buffer);
             break;
         case CMD_OPA:
-            open_server(buffer);
+            open_server(buffer, n_auctions);
+            n_auctions++;
+            read_file = 1;
             break;
         case CMD_CLS:
             close_server(buffer);
@@ -121,35 +132,33 @@ int executeCommands(char *buffer){
         default:
             sprintf(buffer, "ERR\n");
     }
-    return 0;
+    return ret;
 }
 
 
 int main() { 
-	int listenfd, newfd, udpfd, nready, maxfdp1; 
+	int listenfd, newfd, udpfd, maxfdp1; 
 	char buffer[MAXLINE]; 
 	pid_t childpid; 
 	fd_set rset; 
 	ssize_t n; 
 	socklen_t len; 
-	const int on = 1; 
 	struct sockaddr_in cliaddr, servaddr; 
 	void sig_chld(int); 
-    
-    char buffer_to_send[MAXLINE]={0};
-    char state[9][3]={"NOK","NLG","OK","EAU","END","ACC","REF","ILG","ERR"};
-    int counter_auctions=1;
+
 
 	/* create listening TCP socket */
 	listenfd = socket(AF_INET, SOCK_STREAM, 0); 
-	bzero(&servaddr, sizeof(servaddr)); 
+	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET; 
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
+    inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
+	//servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 	servaddr.sin_port = htons(PORT); 
 
 	// binding server addr structure to listenfd 
-	bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
-	listen(listenfd, 10); 
+	n = bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
+    if(n==-1) exit(1);
+    listen(listenfd, 5);
 
 	/* create UDP socket */
 	udpfd = socket(AF_INET, SOCK_DGRAM, 0); 
@@ -171,22 +180,41 @@ int main() {
 		FD_SET(udpfd, &rset); 
 
 		// select the ready descriptor 
-		nready = select(maxfdp1, &rset, NULL, NULL, NULL); 
+		select(maxfdp1, &rset, NULL, NULL, NULL); 
+
 
 		// if tcp socket is readable then handle 
 		// it by accepting the connection 
 		if (FD_ISSET(listenfd, &rset)) { 
+            printf("TCP\n");
 			len = sizeof(cliaddr); 
 			if ((newfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len)) == -1) exit(1); 
-			if ((childpid = fork()) == 0) { 
-                char code[3]={0};
-                char status[3]={0};     
+			if ((childpid = fork()) == 0) {      
 				close(listenfd); 
-				bzero(buffer, sizeof(buffer)); 
+				memset(buffer, 0, sizeof(buffer));
 				n = read(newfd, buffer, sizeof(buffer)); 
                 if (n==-1) exit(1);
-				printf("Receiving: %s\n",buffer);
-                executeCommands(buffer);
+                write(1, "Received: ", 10); write(1, buffer, n);
+                int f_size = executeCommands(buffer);
+                if (read_file && strcmp(buffer, "ROA NOK") != 0) {
+                    size_t bytesRead;
+                    char temp_buffer[MAXLINE];
+                    strcpy(temp_buffer, buffer);
+                    while ((bytesRead = read(newfd, buffer, sizeof(buffer))) > 0) {
+                        printf("Received data: %s\n", buffer);
+                        printf("Bytes read: %ld\n", bytesRead);
+                        writeAuctionData(n_auctions-1,buffer);
+                        printf("HALLO\n");
+                        f_size -= bytesRead;
+                        if (f_size <= 0) break;
+                    }
+                    read_file = 0;
+                    memset(buffer, 0, sizeof(buffer));
+                    strcpy(buffer, temp_buffer);
+                    printf("BUFFY: %s\n", buffer);
+                    memset(temp_buffer, 0, sizeof(temp_buffer));
+                }
+                printf("Sending: %s\n",buffer);
                 n=write(newfd, buffer, MAXLINE);
                 if(n==-1) exit(1);
 			} 
@@ -194,13 +222,14 @@ int main() {
 		} 
 		// if udp socket is readable receive the message. 
 		if (FD_ISSET(udpfd, &rset)) { 
+            printf("UDP\n");
 			len = sizeof(cliaddr); 
-			bzero(buffer, sizeof(buffer));  
+            memset(buffer, 0, sizeof(buffer)); 
 			n = recvfrom(udpfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr, &len); 
             if (n==-1) exit(1);
-            write(1, "received: ", 10); write(1, buffer, n);
+            write(1, "Received: ", 10); write(1, buffer, n);
             executeCommands(buffer);
-            printf("sending: %s", buffer);
+            printf("Sending: %s", buffer);
 			n = sendto(udpfd, (const char*)buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr)); 
             if(n==-1)/*error*/exit(1);
 

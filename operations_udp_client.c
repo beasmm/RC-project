@@ -51,25 +51,25 @@ int client_unregister(char *buffer, User *user){
     return 0;
 }
 
-int client_myauctions(char *buffer){
-    char id[UID_SIZE + 1];
-    sscanf(buffer, "%*s %s", id);
+int client_myauctions(char *buffer, User *user){
+    char uid[UID_SIZE + 1];
+    strcpy(uid, user->uid);
 
-    /* if (strlen(uid) != UID_SIZE) {
+    if (strlen(uid) != UID_SIZE) {
         printf("invalid uid\n");
         return 1;
-    } */
+    }
 
-    id[UID_SIZE+1] = '\0';
+    uid[UID_SIZE] = '\0';
 
     memset(buffer, 0, 128);
-    sprintf(buffer, "LMA %s\n", id);
+    sprintf(buffer, "LMA %s\n", uid);
     return 0;
 }
 
-int client_mybids(char *buffer){
+int client_mybids(char *buffer, User *user){
     char uid[UID_SIZE+1];
-    sscanf(buffer, "%*s %s", uid);
+    strcpy(uid, user->uid);
 
     if (strlen(uid) != UID_SIZE) {
         printf("invalid uid\n");

@@ -23,4 +23,6 @@ int createBid(int aid, char* uid, int bid);
 
 int createStartFile(int aid, char* buffer);
 
+int writeAuctionData(int aid, char* buffer);
+
 #endif // AUCTION_H
