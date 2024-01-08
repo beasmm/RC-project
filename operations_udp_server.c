@@ -239,7 +239,7 @@ int list(char *buffer){
             memset(aid_str, 0, 5);
             sprintf(aid_str, " %03d", aid);
             strcat(buffer, aid_str);
-            if (checkActive(aid)) strcat(buffer, " 1");
+            if (checkActive(aid)) strcat(buffer, " 1"); //TODO: make better
             else strcat(buffer, " 0");
             aid++;
         }

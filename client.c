@@ -270,26 +270,25 @@ int main(){
             memset(buffer, 0, MAXLINE);
 
             if (bytes_img > 0) {
-                FILE *file = fopen(img_name, "rb");
+                FILE *file = fopen(img_name, "r");
                 if (!file) {
                     perror("Error opening file");
                     continue;
                 }
                 size_t bytesRead;
                 while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) { //send image
-                    n=write(fd_tcp,buffer,MAXLINE);
+                    n=write(fd_tcp,buffer, MAXLINE);
                     memset(buffer, 0, MAXLINE);
                     if (bytesRead == bytes_img) break;
                 }
-                n=read(fd_tcp,buffer,MAXLINE);
-                if(n==-1) exit(1);
-                close(fd_tcp);
             }
+            n=read(fd_tcp, buffer,MAXLINE);
+            if(n==-1) exit(1);
+            close(fd_tcp);
             
         }
-
+        printf("Answer: %s", buffer);
         execute_answer_client(buffer);
-
         
         //empty command and reply
         memset(buffer, 0, 128);

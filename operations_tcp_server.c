@@ -37,7 +37,6 @@ int open_server(char *buffer, int aid){
             return auction.size;
         }
         else{
-            printf("not okay\n");
             sprintf(buffer,"ROA NOK\n"); //auction could not be started
             return 0;
         }
@@ -125,24 +124,24 @@ int bid_server(char *buffer){
     memset(buffer, 0, 128);
 
     if(auctionExists(auction.aid)==-1 || checkActive(auction.aid)!=1){
-        sprintf(buffer,"RBD %s\n",state[0]); //auction not active
+        sprintf(buffer, "RBD NOK\n"); //auction not active
         return 0;
     }
     else if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
-        sprintf(buffer,"RBD %s\n",state[1]); //user not logged in
+        sprintf(buffer, "RBD NLG\n"); //user not logged in
         return 0;
     }
     else if(auctionIsOwnedByUser(auction.aid, user.uid)==1){ //check if user owns auction
-        sprintf(buffer,"RBD %s\n",state[7]); //bid in own auction
+        sprintf(buffer, "RBD ILG\n"); //bid in own auction
         return 0;
     }
-    else if(1){ //check if there is a bigger bid
-        sprintf(buffer,"RBD %s\n",state[6]); //bid refused
+    else if(!checkBidAmmount(auction.aid, bid)){ //check if there is a bigger bid
+        sprintf(buffer, "RBD REF\n"); //bid refused
         return 0;
     }
     else{
-        createBid(auction.aid,user.uid,bid);
-        sprintf(buffer,"RBD %s\n",state[5]); //bid accepted
+        if(createBid(auction.aid, user.uid, bid) == 0) printf("error creating bid\n");
+        sprintf(buffer, "RBD ACC\n"); //bid accepted
         return 1;
     }
 }

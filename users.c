@@ -332,11 +332,9 @@ int getListOfFiles(char path[], char *files[]){
         perror("Error opening directory");
         return -1;
     }
-    
     strcat(path, "/");
-
+    
     struct dirent *ent;
-
     int count = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
@@ -345,7 +343,6 @@ int getListOfFiles(char path[], char *files[]){
     }
     return count;
 }
-
 
 int getHost(int aid){
     char path[30] = "USERS";

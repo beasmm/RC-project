@@ -188,7 +188,7 @@ int main() {
             printf("TCP\n");
 			len = sizeof(cliaddr); 
 			if ((newfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len)) == -1) exit(1); 
-			if ((childpid = fork()) == 0) {      
+			if ((childpid = fork()) == 0) {
 				close(listenfd); 
 				memset(buffer, 0, sizeof(buffer));
 				n = read(newfd, buffer, sizeof(buffer)); 
@@ -203,19 +203,17 @@ int main() {
                         printf("Received data: %s\n", buffer);
                         printf("Bytes read: %ld\n", bytesRead);
                         writeAuctionData(n_auctions-1,buffer);
-                        printf("HALLO\n");
                         f_size -= bytesRead;
                         if (f_size <= 0) break;
                     }
                     read_file = 0;
                     memset(buffer, 0, sizeof(buffer));
                     strcpy(buffer, temp_buffer);
-                    printf("BUFFY: %s\n", buffer);
                     memset(temp_buffer, 0, sizeof(temp_buffer));
                 }
-                printf("Sending: %s\n",buffer);
-                printf("HELL\n");
-                n=write(newfd, buffer, MAXLINE);
+                printf("Sending: %s",buffer);
+                n=write(newfd, buffer, strlen(buffer));
+                printf("%ld\n", n);
                 if(n==-1) exit(1);
 			} 
 			close(newfd); 

@@ -27,6 +27,10 @@ int auctionExists(int aid);
 
 int auctionIsOwnedByUser(int aid, char *uid); //returns 1 if auction is owned by user, 0 otherwise
 
+int getBiggestBid(int aid); //returns biggest bid
+
+int checkBidAmmount(int aid, int bid); //returns 1 if bid is allowed, 0 if it will be refused
+
 int createBid(int aid, char* uid, int bid);
 
 int createStartFile(int aid, char uid[], Auction *auction);

@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <time.h>
+#include <stdlib.h>
 
 
 #include "users.h"
@@ -39,7 +40,9 @@ int checkActive(int aid){
     memset(aid_dirname, 0, 30);
     sprintf(aid_dirname, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
 
-    return access(aid_dirname, F_OK) + 1;
+    if (access(aid_dirname, F_OK) == 0) return 0;
+    
+    else return 1;
 }
 
 int createAuctionDir(int aid){
@@ -95,7 +98,6 @@ int getDetailsFromStartFile(int aid, Auction *auction){
     printf(", time: ");
     printtime(auction->start_time);
     printf("\n");
-
 
     fclose(fptr);
     
@@ -161,6 +163,7 @@ int getAsset(char *asset_fname, char *content){
     if (fp == NULL) return 1;
 
     fread(content, sizeof(char), size, fp);
+    fclose(fp);
 
     return 0;
 }
@@ -203,33 +206,89 @@ int createStartFile(int aid, char uid[], Auction *auction){
     fprintf(fptr, "%s %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %ld\n", uid, auction->name, auction->asset_fname, 
             auction->start_value, auction->timeactive, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, 
             tm.tm_min, tm.tm_sec,time(&t));
+    fclose(fptr);
     return 1;
 }
 
-int createBid(int aid, char* uid, int bid){
-    char bid_value_file[35], file_name[35];
-    FILE *fptr;
-    time_t t = time(NULL),numbe ;
-    Auction auction;
-    User user;
-    struct tm tm = *localtime(&t);
-    int seconds = 0, se = 0;
-    if(strlen(uid) != 6) return 0;
-    sprintf(file_name,"AUCTIONS/%d/START_%d.txt", aid, aid);
+int getBiggestBid(int aid){ //TODO: chech fname and path sizes no enunciado
+    char path[30];
+    sprintf(path, "AUCTIONS/%03d/BIDS", aid);
 
-    fptr = fopen("filename","r");
-    fscanf(fptr,"%hhd %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %d\n", user.uid, auction.name, auction.asset_fname, &auction.start_value, &auction.timeactive, &tm.tm_year + 1900, &tm.tm_mon + 1,&tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec,&se);
+    DIR *dir = opendir(path);
+    if (dir == NULL) return -1;
+
+    strcat(path, "/");
+
+    struct dirent *ent;
+    int biggest_bid = 0;
+    while ((ent = readdir(dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+        int bid = atoi(ent->d_name);
+        if (bid > biggest_bid) biggest_bid = bid;
+    }
+    printf("biggest_bid: %d\n", biggest_bid);
+    return biggest_bid;
+}
+
+int checkBidAmmount(int aid, int bid){
+    char file_name[35];
+    FILE *fptr;
+    int min_bid;
+
+    sprintf(file_name, "AUCTIONS/%03d/BIDS", aid);
+
+    if(isDirectoryEmpty(file_name)){
+        sprintf(file_name, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+        fptr = fopen(file_name, "r");
+        if(fptr == NULL) return 0;
+        fscanf(fptr, "%*s %*s %*s %d %*s", &min_bid);
+        fclose(fptr);
+    }
+    else{
+        min_bid = getBiggestBid(aid);
+    }
+    printf("min_bid: %d\n", min_bid);
+    if (bid > min_bid) return 1;
+    return 0;
+}
+
+int createBid(int aid, char* uid, int bid){ //UID bid_value bid_date bid_time bid_sec_time
+    char file_name[45];
+    memset(file_name, 0, 45);
+    FILE *fptr;
+    time_t start_time, current_time, seconds;
+
+    printf("aid: %03d\n", aid);
+
+    sprintf(file_name,"AUCTIONS/%03d/START_%03d.txt", aid, aid);
+
+    printf("file_name: %s\n", file_name);
+
+    fptr = fopen(file_name, "r");
+    if(fptr == NULL) return -1;
+    fscanf(fptr, "%*s %*s %*s %*d %*d %*d-%*d-%*d %*d:%*d:%*d %ld\n", &start_time);
     fclose(fptr);
 
-    sprintf(bid_value_file, "AUCTIONS/%s/BIDS/%d.txt", uid, bid);
-    fptr = fopen(bid_value_file, "w");
-    if(fptr == NULL) return 0;
+    memset(file_name, 0, 45);
+    sprintf(file_name, "AUCTIONS/%03d/BIDS/%06d.txt", aid, bid);
+    fptr = fopen(file_name, "w");
+    if(fptr == NULL) return -1;
     
-    seconds = time(&t);
-    numbe = seconds - se;
+    time(&current_time);
+    struct tm tm = *localtime(&current_time);
+    seconds = current_time - start_time;
 
-    fprintf(fptr, "%s %d %04d-%02d-%02d %02d:%02d:%02d %ld\n",uid, bid, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, numbe);
+    fprintf(fptr, "%s %d %04d-%02d-%02d %02d:%02d:%02d %ld\n", uid, bid, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, seconds);
     
+    fclose(fptr);
+
+    memset(file_name, 0, 45);
+    sprintf(file_name, "USERS/%s/BIDDED/%03d.txt", uid, aid);
+    fptr = fopen(file_name, "w");
+    if(fptr == NULL) return -1;
+
+    fprintf(fptr, "%d\n", bid);
+
     fclose(fptr);
 
     return 1;
