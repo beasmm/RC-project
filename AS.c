@@ -172,6 +172,7 @@ int main() {
 	maxfdp1 = max(listenfd, udpfd) + 1; 
 
     initUsers();
+    initAuctions();
 
 	for (;;) { 
 

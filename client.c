@@ -78,10 +78,10 @@ int execute_commands_client(char *buffer){
             return client_unregister(buffer, &user);
         case CMD_MYAUCTIONS:
             send_udp = 1;
-            return client_myauctions(buffer);
+            return client_myauctions(buffer, &user);
         case CMD_MYBIDS:
             send_udp = 1;
-            return client_mybids(buffer);
+            return client_mybids(buffer, &user);
         case CMD_SHOW_RECORD:
             send_udp = 1;
             return client_show_record(buffer);

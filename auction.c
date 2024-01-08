@@ -42,12 +42,12 @@ int createAuctionDir(int aid){
 
     sprintf(aid_dirname, "AUCTIONS/%03d", aid);
 
-    ret = mkdir(aid_dirname, 0700);
+    ret = mkdir(aid_dirname, 0777);
     if (ret == -1) return 0;
 
     sprintf(bids_dirname, "AUCTIONS/%03d/BIDS", aid);
 
-    ret=mkdir(bids_dirname, 0700);
+    ret=mkdir(bids_dirname, 0777);
     if (ret == -1) {
         rmdir(aid_dirname);
         return 0;
@@ -55,7 +55,7 @@ int createAuctionDir(int aid){
 
     sprintf(asset_dirname, "AUCTIONS/%03d/ASSET", aid);
 
-    ret=mkdir(asset_dirname, 0700);
+    ret=mkdir(asset_dirname, 0777);
     if (ret == -1) {
         rmdir(aid_dirname);
         rmdir(bids_dirname);
