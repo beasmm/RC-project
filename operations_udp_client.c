@@ -125,7 +125,6 @@ void print_auctions(char str[]){
     return;
 }
 
-
 //Client answer operations:
 int client_login_answer(char *buffer){
     if (strcmp("OK\n", buffer + 4) == 0) {
@@ -269,8 +268,6 @@ int client_show_record_answer(char *buffer){//TODO
     }
 
     else printf("Auction ongoing\n");
-
-
 
     return 1;
 }

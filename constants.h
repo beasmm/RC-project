@@ -26,13 +26,26 @@
 #define UID_SIZE 6
 #define PASSWORD_SIZE 8
 
+typedef struct Date{
+    int day;
+    int month;
+    int year;
+}Date;
+
+typedef struct Time{
+    int hour;
+    int minute;
+    int second;
+}Time;
+
 typedef struct User{
     char uid[10];
     char password[10];
     int logged_in;
 }User;
 
-typedef struct{
+typedef struct Auction{
+    char host_uid[UID_SIZE+1];
     char name[15];
     char asset_fname[FNAME];
     int start_value;
@@ -41,6 +54,8 @@ typedef struct{
     char *data;
     int aid;
     int higher_value;
+    Date start_date;
+    Time start_time;
 }Auction;
 
 enum Command {

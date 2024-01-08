@@ -9,6 +9,16 @@
 #include "users.h"
 #include "constants.h"
 
+int printdate(Date date){
+    printf("%04d-%02d-%02d", date.year, date.month, date.day);
+    return 0;
+}
+
+int printtime(Time time){
+    printf("%02d:%02d:%02d", time.hour, time.minute, time.second);
+    return 0;
+}
+
 int initAuctions(){
     struct stat st = {0};
     int ret;
@@ -62,6 +72,33 @@ int createAuctionDir(int aid){
         return 0;
     }
     printf("Auction created\n");
+    return 1;
+}
+
+int getDetailsFromStartFile(int aid, Auction *auction){
+    char path[35];
+    FILE *fptr;
+
+    memset(path, 0, 30);
+    sprintf(path, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+
+    fptr = fopen(path, "r");
+    if (fptr == NULL) return 0;
+
+    fscanf(fptr, "%s %s %s %d %d %4d-%2d-%2d %2d:%2d:%2d %*s\n", auction->host_uid, auction->name, auction->asset_fname, 
+            &auction->start_value, &auction->timeactive, &auction->start_date.year, &auction->start_date.month, 
+            &auction->start_date.day, &auction->start_time.hour, &auction->start_time.minute, &auction->start_time.second);
+
+    printf("AUCTIONS name: %s, fname: %s, value: %d, timective: %d, date: ",
+            auction->name, auction->asset_fname, auction->start_value, auction->timeactive);
+    printdate(auction->start_date);
+    printf(", time: ");
+    printtime(auction->start_time);
+    printf("\n");
+
+
+    fclose(fptr);
+    
     return 1;
 }
 
@@ -159,8 +196,6 @@ int createStartFile(int aid, char uid[], Auction *auction){
     struct tm tm = *localtime(&t);
     auction->aid = aid;
 
-    printf("creating startfile: name %s, fname: %s, start value %d, timeactive %d\n", auction->name, auction->asset_fname, auction->start_value, auction->timeactive);
-
     sprintf(file_name, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
     printf("file_name: %s\n", file_name);
     fptr = fopen(file_name, "w");
@@ -220,3 +255,5 @@ int writeAuctionData(int aid, char *data){
     fclose(fptr);
     return 1;
 }
+
+

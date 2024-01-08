@@ -200,7 +200,7 @@ int mybids(char *buffer){
     return 0;
 }
 
-int show_record(char *buffer){
+int show_record(char *buffer){ //TODO: LIST OF BIDS
     char straid[4];
     strncpy(straid, buffer + 4, 3);
     int aid = atoi(straid);
@@ -209,14 +209,17 @@ int show_record(char *buffer){
         sprintf(buffer, "RRC NOK\n");
         return 0;
     }
-    sprintf(buffer, "RRC OK %06d", getHost(aid));
 
-    char asset_filename[128];
-    memset(asset_filename, 0, 128);
-    getAssetFileName(straid, asset_filename);
+    Auction auction;
+    char start_date[11], start_time[10];
+    getDetailsFromStartFile(aid, &auction);
 
-    strcat(buffer, " ");
-    strcat(buffer, asset_filename);
+    printf("UDP SERVER "); printdate(auction.start_date); printtime(auction.start_time); printf("\n");
+
+    sprintf(start_date, "%04d-%02d-%02d", auction.start_date.year, auction.start_date.month, auction.start_date.day);
+    sprintf(start_time, "%02d:%02d:%02d", auction.start_time.hour, auction.start_time.minute, auction.start_time.second);
+
+    sprintf(buffer, "RRC OK %s %s %s %d %s %s %d\n", auction.host_uid, auction.name, auction.asset_fname, auction.start_value, start_date, start_time, auction.timeactive);
 
     return 0;
 }

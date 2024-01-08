@@ -3,15 +3,21 @@
 
 #include "constants.h"
 
+int printdate(Date date);
+
+int printtime(Time time);
+
 int initAuctions();
 
 int checkActive(int aid);
 
 int createAuctionDir(int aid);
 
+int getDetailsFromStartFile(int aid, Auction *auction);
+
 int createAssetFile(char *asset_fname);
 
-int getAssetFileName(char *aid, char asset_fname[]); //returns 0if no asset was found
+int getAssetFileName(char *aid, char asset_fname[]); //returns 0 if no asset was found
 
 int checkAssetFile(char *asset_fname);
 
