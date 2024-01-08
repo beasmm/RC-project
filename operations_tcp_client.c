@@ -135,7 +135,7 @@ int client_open_answer(char *buffer){
 }
 
 int client_close_answer(char *buffer){
-    if(strcmp("EUA\n", buffer + 4)==0){
+    if(strcmp("EAU\n", buffer + 4)==0){
         printf("Auction does not exist\n");
         return 0;
     }
