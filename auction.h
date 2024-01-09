@@ -3,6 +3,8 @@
 
 #include "constants.h"
 
+int getAuctionID();
+
 int printdate(Date date);
 
 int printtime(Time time);
@@ -35,6 +37,6 @@ int createBid(int aid, char* uid, int bid);
 
 int createStartFile(int aid, char uid[], Auction *auction);
 
-int writeAuctionData(int aid, char* buffer);
+int writeAuctionData(int aid, char* buffer, size_t bytesRead);
 
 #endif // AUCTION_H

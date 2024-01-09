@@ -265,24 +265,27 @@ int main(){
             n=connect(fd_tcp,res->ai_addr,res->ai_addrlen);
             if(n==-1)/*error*/ exit(1);
             
-            n=write(fd_tcp,buffer,MAXLINE);
+            n=write(fd_tcp,buffer,strlen(buffer));
             if(n==-1) exit(1);
             memset(buffer, 0, MAXLINE);
 
             if (bytes_img > 0) {
-                FILE *file = fopen(img_name, "r");
+                FILE *file = fopen(img_name, "rb");
                 if (!file) {
                     perror("Error opening file");
                     continue;
                 }
                 size_t bytesRead;
+                size_t aux =0;
                 while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) { //send image
-                    n=write(fd_tcp,buffer, MAXLINE);
+                    aux+=bytesRead;
+                    n=write(fd_tcp, buffer, strlen(buffer));
                     memset(buffer, 0, MAXLINE);
-                    if (bytesRead == bytes_img) break;
+                    printf("Bytes sent: %ld\n", aux);
+                    if (bytesRead >= bytes_img) break;
                 }
             }
-            n=read(fd_tcp, buffer,MAXLINE);
+            n=read(fd_tcp, buffer, MAXLINE);
             if(n==-1) exit(1);
             close(fd_tcp);
             

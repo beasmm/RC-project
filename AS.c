@@ -23,7 +23,6 @@
 #include "auction.h"
 #include "operations_server.h"
 
-int n_auctions = 1;
 int read_file = 0;
 
 int max(int x, int y) 
@@ -78,7 +77,7 @@ enum Command get_command(char *buffer){
             else
                 return CMD_ERROR;
         case 'e':
-            if( (strcmp(buffer, "exit\n") == 0) || (strcmp(buffer, "exit") == 0) )
+            if((strcmp(buffer, "exit\n") == 0) || (strcmp(buffer, "exit") == 0))
                 return CMD_EXIT;
             else
                 return CMD_ERROR;
@@ -112,8 +111,7 @@ int executeCommands(char *buffer){
             list(buffer);
             break;
         case CMD_OPA:
-            open_server(buffer, n_auctions);
-            n_auctions++;
+            open_server(buffer, getAuctionID());
             read_file = 1;
             break;
         case CMD_CLS:
@@ -197,12 +195,14 @@ int main() {
                 int f_size = executeCommands(buffer);
                 if (read_file && strcmp(buffer, "ROA NOK") != 0) {
                     size_t bytesRead;
+                    size_t aux =0;
                     char temp_buffer[MAXLINE];
                     strcpy(temp_buffer, buffer);
                     while ((bytesRead = read(newfd, buffer, sizeof(buffer))) > 0) {
+                        aux+=bytesRead;
                         printf("Received data: %s\n", buffer);
-                        printf("Bytes read: %ld\n", bytesRead);
-                        writeAuctionData(n_auctions-1,buffer);
+                        printf("Bytes read: %ld\n", aux);
+                        writeAuctionData(getAuctionID()-1, buffer, bytesRead);
                         f_size -= bytesRead;
                         if (f_size <= 0) break;
                     }

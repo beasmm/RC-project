@@ -30,7 +30,7 @@ int open_server(char *buffer, int aid){
         return 0;
     }
     else{
-        if(createAuctionDir(aid)==1 && createStartFile(aid, user.uid, &auction)==1 && addToHosted(aid, user.uid)){
+        if(createAuctionDir(aid) == 1 && createStartFile(aid, user.uid, &auction)==1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
             createAssetFile(filename);
             sprintf(buffer, "ROA OK %d\n", aid);

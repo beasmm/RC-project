@@ -10,6 +10,33 @@
 #include "users.h"
 #include "constants.h"
 
+//returns the last user id
+int getAuctionID(){
+    char path[300];
+    DIR *dir;
+    struct dirent *ent;
+    int i = 0;
+
+    dir = opendir("AUCTIONS");
+    if (dir == NULL) return 0;
+
+    while ((ent = readdir(dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+        struct stat file_stat;
+        sprintf(path, "AUCTIONS/%s", ent->d_name);
+        if (stat(path, &file_stat) == 0) {
+            if (S_ISDIR(file_stat.st_mode)) {
+                // If it's a directory, print its name
+                i++;
+            }
+        } else {
+            perror("Error statting file");
+        }
+    }
+    closedir(dir);
+    return i+1;
+}
+
 int printdate(Date date){
     printf("%04d-%02d-%02d", date.year, date.month, date.day);
     return 0;
@@ -51,17 +78,23 @@ int createAuctionDir(int aid){
     char asset_dirname[20];
     int ret;
 
+    printf("aid: %03d\n", aid);
+
     if (aid < 1 || aid > 999) return 0;
 
     sprintf(aid_dirname, "AUCTIONS/%03d", aid);
 
     ret = mkdir(aid_dirname, 0777);
-    if (ret == -1) return 0;
+    if (ret == -1) {
+        printf("mkdir1 failed\n");
+        return 0;
+    }
 
     sprintf(bids_dirname, "AUCTIONS/%03d/BIDS", aid);
 
     ret=mkdir(bids_dirname, 0777);
     if (ret == -1) {
+        printf("mkdir2 failed\n");
         rmdir(aid_dirname);
         return 0;
     }
@@ -70,6 +103,7 @@ int createAuctionDir(int aid){
 
     ret=mkdir(asset_dirname, 0777);
     if (ret == -1) {
+        printf("mkdir3 failed\n");
         rmdir(aid_dirname);
         rmdir(bids_dirname);
         return 0;
@@ -294,7 +328,7 @@ int createBid(int aid, char* uid, int bid){ //UID bid_value bid_date bid_time bi
     return 1;
 }
 
-int writeAuctionData(int aid, char *data){
+int writeAuctionData(int aid, char *data, size_t bytesRead){
     char file_path[128];
     char file_name[35];
     FILE *fptr;
@@ -308,9 +342,9 @@ int writeAuctionData(int aid, char *data){
     getAssetFileName(straid, file_name);
 
     sprintf(file_path, "AUCTIONS/%03d/ASSET/%s", aid, file_name);
-    fptr = fopen(file_path, "w");
+    fptr = fopen(file_path, "wb");
     if(fptr == NULL) return 0;
-    fprintf(fptr, "%s", data);
+    fwrite(data, 1, bytesRead, fptr);
     fclose(fptr);
     return 1;
 }
