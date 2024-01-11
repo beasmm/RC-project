@@ -17,13 +17,19 @@ int open_server(char *buffer, int aid){
     Auction auction;
     User user;
     char filename[50];
-    sscanf(buffer, "OPA %s %s %s %d %d %s %ld \n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size);
+    char data[1000];
+    FILE *fptr;
+    sscanf(buffer, "OPA %s %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size, data);
+    auction.data = malloc(auction.size + 1);
+    strcpy(auction.data,data);
     memset(buffer, 0, 128);
 
     printf("auction.name: %s\n", auction.name);
     printf("auction.start_value: %d\n", auction.start_value);
     printf("auction.timeactive: %d\n", auction.timeactive);
     printf("auction.asset_fname: %s\n", auction.asset_fname);
+    printf("auction.size: %ld\n", auction.size);
+    printf("auction.data: %s\n", auction.data);
    
     if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
         sprintf(buffer, "ROA NLG\n"); //user not logged in
@@ -33,6 +39,10 @@ int open_server(char *buffer, int aid){
         if(createAuctionDir(aid) == 1 && createStartFile(aid, user.uid, &auction)==1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
             createAssetFile(filename);
+            fptr = fopen(filename, "w");
+            if(fptr == NULL) return 0;
+            fprintf(fptr, "%s", auction.data);
+            fclose(fptr);
             sprintf(buffer, "ROA OK %d\n", aid);
             return auction.size;
         }

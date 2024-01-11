@@ -24,7 +24,7 @@ int getAssetData(char *path, char *data, size_t size){
 
     // Null-terminate the buffer
     data[bytesRead] = '\0';
-
+    
     // Close the file
     fclose(file);
 
@@ -52,7 +52,7 @@ int client_open(char *buffer, Auction auction, User user, char img_name[], long 
     printf("asset_fname: %s\n", auction.asset_fname);
     printf("start_value: %d\n", auction.start_value);
     printf("timeactive: %d\n", auction.timeactive);
-    
+
     
 
     char path[128];
@@ -75,7 +75,7 @@ int client_open(char *buffer, Auction auction, User user, char img_name[], long 
 
     memset(buffer, 0, MAXLINE);
 
-    sprintf(buffer,"OPA %s %s %s %d %d %s %ld \n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size);
+    sprintf(buffer,"OPA %s %s %s %d %d %s %ld %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size, auction.data);
     printf("buffer open: %s\n", buffer);
 
     memset(auction.asset_fname, 0, 24);
