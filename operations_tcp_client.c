@@ -15,7 +15,7 @@ int getAssetData(char *path, char *data, size_t size){
     }
 
     // Read data from the file
-    size_t bytesRead = fread(data, sizeof(char), size, file);
+    size_t bytesRead = fread(data, sizeof(unsigned char), size, file);
     if (ferror(file)) {
         perror("Error reading file");
         fclose(file);
@@ -52,7 +52,8 @@ int client_open(char *buffer, Auction auction, User user, char img_name[], long 
     printf("asset_fname: %s\n", auction.asset_fname);
     printf("start_value: %d\n", auction.start_value);
     printf("timeactive: %d\n", auction.timeactive);
-
+    
+    
 
     char path[128];
     sprintf(path, "ASSETS/%s", auction.asset_fname);
