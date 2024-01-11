@@ -8,6 +8,7 @@
 
 
 int getAssetData(char *path, char *data, size_t size){
+
     FILE *file = fopen(path, "r");
     if (file == NULL) {
         perror("Error opening file");

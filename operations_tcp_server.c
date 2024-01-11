@@ -39,6 +39,7 @@ int open_server(char *buffer, int aid){
         if(createAuctionDir(aid) == 1 && createStartFile(aid, user.uid, &auction)==1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
             createAssetFile(filename);
+            
             fptr = fopen(filename, "w");
             if(fptr == NULL) return 0;
             fprintf(fptr, "%s", auction.data);
