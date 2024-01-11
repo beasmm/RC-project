@@ -7,30 +7,45 @@
 #include "constants.h"
 
 
-int getAssetData(char *path, char *data, size_t size){
+int getAssetData(char *path, char *data, size_t size) {
+    // Initialize default mode to binary to be safe
+    const char *mode = "rb";
 
-    FILE *file = fopen(path, "r");
+    // Determine the correct mode based on file extension
+    if (strstr(path, ".txt") != NULL) {
+        mode = "r";
+    } else if (strstr(path, ".jpg") != NULL) {
+        mode = "rb";
+    }
+
+    // Open the file in the determined mode
+    FILE *file = fopen(path, mode);
     if (file == NULL) {
         perror("Error opening file");
         return 0;  // Failed to open file
     }
 
     // Read data from the file
-    size_t bytesRead = fread(data, sizeof(unsigned char), size, file);
-    if (ferror(file)) {
-        perror("Error reading file");
+    size_t bytesRead = fread(data, 1, size, file);
+    if (bytesRead < size) {
+        if (ferror(file)) {
+            // Handle read error
+            perror("Error reading file");
+        } else {
+            // Handle case where less data was read than expected
+            fprintf(stderr, "Warning: Only %zu bytes read, expected %zu bytes.\n", bytesRead, size);
+        }
         fclose(file);
         return 0;  // Failed to read from file
     }
 
-    // Null-terminate the buffer
-    data[bytesRead] = '\0';
-    
     // Close the file
     fclose(file);
 
     return 1;  // Success
 }
+
+
 
 
 long int checkAssetSize(char *path){
