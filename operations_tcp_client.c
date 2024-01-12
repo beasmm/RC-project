@@ -7,46 +7,29 @@
 #include "constants.h"
 
 
-int getAssetData(char *path, char *data, size_t size) {
-    // Initialize default mode to binary to be safe
-    const char *mode = "rb";
-
-    // Determine the correct mode based on file extension
-    if (strstr(path, ".txt") != NULL) {
-        mode = "r";
-    } else if (strstr(path, ".jpg") != NULL) {
-        mode = "rb";
-    }
-
-    // Open the file in the determined mode
-    FILE *file = fopen(path, mode);
+int getAssetData(char *path, char *data, size_t size){
+    FILE *file = fopen(path, "r");
     if (file == NULL) {
         perror("Error opening file");
         return 0;  // Failed to open file
     }
 
     // Read data from the file
-    size_t bytesRead = fread(data, 1, size, file);
-    if (bytesRead < size) {
-        if (ferror(file)) {
-            // Handle read error
-            perror("Error reading file");
-        } else {
-            // Handle case where less data was read than expected
-            fprintf(stderr, "Warning: Only %zu bytes read, expected %zu bytes.\n", bytesRead, size);
-        }
+    size_t bytesRead = fread(data, sizeof(char), size, file);
+    if (ferror(file)) {
+        perror("Error reading file");
         fclose(file);
         return 0;  // Failed to read from file
     }
+
+    // Null-terminate the buffer
+    data[bytesRead] = '\0';
 
     // Close the file
     fclose(file);
 
     return 1;  // Success
 }
-
-
-
 
 long int checkAssetSize(char *path){
 
@@ -61,41 +44,25 @@ long int checkAssetSize(char *path){
 }
 
 //Client send operations:
-int client_open(char *buffer, Auction auction, User user, char img_name[], long int *bytes_img){
+int client_open(char *buffer, Auction auction, User user, char file_name[], long int *filesize){
     sscanf(buffer, "open %s %s %d %d\n", auction.name, auction.asset_fname, &auction.start_value, &auction.timeactive);
-
-    printf("name: %s\n", auction.name);
-    printf("asset_fname: %s\n", auction.asset_fname);
-    printf("start_value: %d\n", auction.start_value);
-    printf("timeactive: %d\n", auction.timeactive);
-
-    
 
     char path[128];
     sprintf(path, "ASSETS/%s", auction.asset_fname);
     struct stat st = {0};
-    if (stat("ASSETS", &st) == -1) {
-        printf("File %s does not exist\n", auction.asset_fname);
+    if (stat(path, &st) != 0) {
+        printf(".File %s does not exist\n", auction.asset_fname);
+        return 0;
     }
-    else{
-        auction.size = checkAssetSize(path);
-        auction.data = malloc(auction.size);
-        getAssetData(path, auction.data, auction.size);
-        printf("data: %s\n", auction.data);
-    }
+    auction.size = checkAssetSize(path);
 
-    strcpy(img_name, path);
-    *bytes_img = auction.size;
+    strcpy(file_name, path);
+    *filesize = auction.size;
 
-    printf("size: %ld\n", *bytes_img);
+    memset(buffer, 0, strlen(buffer));
 
-    memset(buffer, 0, MAXLINE);
+    sprintf(buffer,"OPA %s %s %s %d %d %s %ld \n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size);
 
-    sprintf(buffer,"OPA %s %s %s %d %d %s %ld %s\n", user.uid, user.password, auction.name, auction.start_value, auction.timeactive, auction.asset_fname, auction.size, auction.data);
-    printf("buffer open: %s\n", buffer);
-
-    memset(auction.asset_fname, 0, 24);
-    memset(auction.name, 0, 15);
     return 0;
 }
 
@@ -119,6 +86,10 @@ int client_show_asset(char *buffer, Auction auction){
 }
 
 int client_bid(char *buffer, User user){
+    if (strlen(user.uid) == 0) {
+        printf("Please login first\n");
+        return -1;
+    }
     int aid, value;
     if(buffer[1]=='i') sscanf(buffer, "bid %d %d\n", &aid, &value);
     else sscanf(buffer, "b %d %d\n", &aid, &value);
@@ -180,7 +151,7 @@ int client_show_asset_answer(char *buffer){
         return 0;
     }
     else if(strncmp("OK", buffer + 4, 2)==0){
-        printf("Asset: %s\n", buffer + 7);
+        printf("Asset: %s", buffer + 7);
         return 1;
     }
     else if(strcmp("ERR\n", buffer + 4)==0){
@@ -215,5 +186,69 @@ int client_bid_answer(char *buffer){
         printf("An error occurred while showing asset\n");
         return 0;
     }
+    return 0;
+}
+
+
+//sending and transfering files
+int client_sendFile(int fd, char* filepath, int size){
+    FILE *file = fopen(filepath, "rb");
+    if (file == NULL) return -1;
+
+    int filefd = fileno(file);
+    size_t total_sent = 0;
+    size_t n_sent, n_read, done;
+    char data[MAXLINE];
+
+    // Read data from the file
+    while (total_sent < size) {
+        memset(data, 0, MAXLINE);
+        n_read = read(filefd, data, sizeof(data) - 1);
+        if (n_read == -1) {
+            perror("Error reading file");
+            fclose(file);
+            return -1;
+        }
+        done = 0;
+        while (done < n_read) {
+            n_sent = write(fd, data + done, n_read - done);
+            if (n_sent == -1) {
+                perror("Error sending file");
+                fclose(file);
+                return -1;
+            }
+            done += n_sent;
+        }
+        total_sent += n_read;
+    }
+    fclose(file);
+    return 0;
+}
+
+int client_receiveFile(int fd, char *filepath, int n){
+    FILE *file = fopen(filepath, "wb");
+    if (file == NULL) return -1;
+    
+    size_t total = 0;
+    size_t n_read, bytesRead, done;
+
+    char data[MAXLINE];
+    memset(data, 0, MAXLINE);
+
+    while (total < n) {
+        bytesRead = read(fd, data, sizeof(data));
+        done = 0;
+        while (done < bytesRead) {
+            n_read = fwrite(data, 1, bytesRead, file);
+            if (n_read == -1) {
+                perror("Error writing file");
+                fclose(file);
+                return -1;
+            }
+            done += n_read;
+        }
+        total += done;
+    }
+    fclose(file);
     return 0;
 }

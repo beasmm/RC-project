@@ -13,7 +13,7 @@ int print_bids_sr(char *buffer){
 
     sscanf(buffer, "B %s %s %s %s %i ", uid, value, date, time, &secs);
 
-    printf("  >  Bidder %s bid %s on %s at %s, %i seconds after the auction started\n", uid, value, date, time, secs);
+    printf("  >  Bidder %s: bid %s on %s at %s, %i seconds after the auction started\n", uid, value, date, time, secs);
 
     return 0;
 }
@@ -28,11 +28,11 @@ int client_login(char *buffer, User *user){
     memset(buffer, 0, 128);
 
     if (strlen(user->uid) != UID_SIZE) { //register new user
-        printf("invalid uid\n");
+        printf("Invalid UID\n");
         return 1;
     }
     if (strlen(user->password) != PASSWORD_SIZE) { //register new user
-        printf("invalid password\n");
+        printf("Invalid password\n");
         return 1;
     }
     sprintf(buffer, "LIN %s %s\n", user->uid, user->password);
@@ -56,7 +56,7 @@ int client_myauctions(char *buffer, User *user){
     strcpy(uid, user->uid);
 
     if (strlen(uid) != UID_SIZE) {
-        printf("invalid uid\n");
+        printf("Invalid UID\n");
         return 1;
     }
 
@@ -72,7 +72,7 @@ int client_mybids(char *buffer, User *user){
     strcpy(uid, user->uid);
 
     if (strlen(uid) != UID_SIZE) {
-        printf("invalid uid\n");
+        printf("Invalid UID\n");
         return 1;
     }
 
@@ -113,10 +113,10 @@ void print_auctions(char str[]){
         aid[j] = '\0';
         i++;
 
-        printf("id: %s --> ", aid);
+        printf("\nID: %s --> ", aid);
 
-        if (str[i] == '0') printf("state: inactive\n");
-        else if (str[i] == '1') printf("state: active\n");
+        if (str[i] == '0') printf("State: Inactive");
+        else if (str[i] == '1') printf("State: Active");
         j = 0;
         i += 2;
     }
@@ -128,15 +128,15 @@ void print_auctions(char str[]){
 //Client answer operations:
 int client_login_answer(char *buffer){
     if (strcmp("OK\n", buffer + 4) == 0) {
-        printf("successful login\n");
+        printf("Successful login\n");
         return 1;
     }
     else if (strcmp("NOK\n", buffer + 4) == 0) {
-        printf("incorrect login attempt\n");
+        printf("Incorrect login attempt\n");
         return 0;
     }
     else {
-        printf("new user registered\n");
+        printf("New user registered\n");
         return 1;
     }
     return 0;
@@ -144,15 +144,15 @@ int client_login_answer(char *buffer){
 
 int client_logout_answer(char *buffer){
     if (strcmp("OK\n", buffer + 4) == 0) {
-        printf("successful logout\n");
+        printf("Successful logout\n");
         return 1;
     }
     else if (strcmp("UNR\n", buffer + 4) == 0) {
-        printf("unknow user\n");
+        printf("Unknow user\n");
         return 0;
     }
     else if (strcmp("NOK\n", buffer + 4) == 0) {
-        printf("user not logged in\n");
+        printf("User not logged in\n");
         return 0;
     }
     return 0;
@@ -160,15 +160,15 @@ int client_logout_answer(char *buffer){
 
 int client_unregister_answer(char *buffer){
     if (strcmp("OK\n", buffer + 4) == 0) {
-        printf("successful unregister\n");
+        printf("Successful unregister\n");
         return 1;
     }
     else if (strcmp("UNR\n", buffer + 4) == 0) {
-        printf("unknow user\n");
+        printf("Unknow user\n");
         return 0;
     }
     else {
-        printf("user not logged in\n");
+        printf("User not logged in\n");
         return 0;
     }
     return 0;
@@ -176,15 +176,15 @@ int client_unregister_answer(char *buffer){
 
 int client_myauctions_answer(char *buffer){
     if (strcmp("NLG\n", buffer + 4) == 0) {
-        printf("user not logged in\n");
+        printf("User not logged in\n");
         return 0;
     }
     else if (strcmp("NOK\n", buffer + 4) == 0) {
-        printf("user has no ongoing auctions\n");
+        printf("User has no ongoing auctions\n");
         return 0;
     }
     else {
-        printf("ongoing auctions started by user:\n");
+        printf("Ongoing auctions started by user:");
         print_auctions(buffer);
         return 0;
     }
@@ -192,15 +192,15 @@ int client_myauctions_answer(char *buffer){
 
 int client_mybids_answer(char *buffer){
     if (strcmp("NLG\n", buffer + 4) == 0) {
-        printf("user not logged in\n");
+        printf("User not logged in\n");
         return 0;
     }
     else if (strcmp("NOK\n", buffer + 4) == 0) {
-        printf("user has no ongoing bids\n");
+        printf("User has no ongoing bids\n");
         return 0;
     }
     else {
-        printf("ongoing auctions with bids from user:\n");
+        printf("Ongoing auctions with bids from user:");
         print_auctions(buffer);
         return 0;
     }
@@ -208,7 +208,7 @@ int client_mybids_answer(char *buffer){
 
 int client_show_record_answer(char *buffer){//TODO
     if (strcmp("NOK\n", buffer + 4) == 0) {
-        printf("auction does not exist\n");
+        printf("Auction does not exist\n");
         return 0;
     }
     char host_uid[UID_SIZE+1];
@@ -274,11 +274,11 @@ int client_show_record_answer(char *buffer){//TODO
 
 int client_list_answer(char *buffer){
     if (strcmp("NOK\n", buffer + 4) == 0) {
-        printf("no auction started yet\n");
+        printf("No auction started yet\n");
         return 0;
     }
     else {
-        printf("ongoing auctions:\n");
+        printf("Ongoing auctions:");
         print_auctions(buffer);
         return 0;
     }

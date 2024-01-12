@@ -11,16 +11,17 @@
 
 #include "operations_client.h"
 
-#define PORT "58011"
+#define DEFAULT_PORT_G7 "58007";
 
 User user;
 Auction auction;
 
-int send_udp;
-long int bytes_img = 0;
-char img_name[128] = {0};
-int loop = 1;
+int send_udp, send_tcp;
+long int filesize = 0;
+char filepath[128] = {0};
 
+
+//TODO: verify all arguments
 
 enum Command get_client_command(char *buffer){
     switch(buffer[0]){
@@ -29,7 +30,7 @@ enum Command get_client_command(char *buffer){
                 return CMD_LOGIN;
             else if (strcmp("logout", buffer) == 0)
                 return CMD_LOGOUT;
-            else if (strcmp("list", buffer) == 0 || buffer[1] == '\0')
+            else if (strcmp("list", buffer) == 0 || buffer[1]  == '\0')
                 return CMD_LIST;
             else return CMD_ERROR;
         case 'u':
@@ -89,30 +90,30 @@ int execute_commands_client(char *buffer){
             sprintf(buffer, "LST\n");
             return 0;
         case CMD_OPA:
-            send_udp = 0;
-            client_open(buffer, auction, user, img_name, &bytes_img);
+            send_tcp = 1;
+            client_open(buffer, auction, user, filepath, &filesize);
             return 0;
         case CMD_CLS:
-            send_udp = 0;
-            bytes_img = 0;
+            send_tcp = 1;
+            filesize = 0;
             client_close(buffer, auction, user);
             return 0;
         case CMD_SAS:
-            send_udp = 0;
-            bytes_img = 0;
+            send_tcp = 1;
+            filesize = 0;
             client_show_asset(buffer, auction);
             return 0;
         case CMD_BID:
-            send_udp = 0;
-            bytes_img = 0;
-            client_bid(buffer, user);
+            send_tcp = 1;
+            filesize = 0;
+            if (client_bid(buffer, user) == -1) return 1;
             return 0;
         case CMD_EXIT:
             if (user.logged_in) {
-                printf("please logout first\n");
+                printf("Please logout first\n");
                 return 1;
             }
-            else loop = 0;
+            else exit(0);
             return 0;
         default:
             printf("Invalid command: %s\n", buffer);
@@ -211,7 +212,32 @@ int execute_answer_client(char *buffer){
 }
 
 
-int main(){
+int main(int argc, char **argv){
+    char *asIP = NULL;
+    char *asPort = NULL;    
+    
+    int opt;
+    while ((opt = getopt(argc, argv, "n:p:")) != -1) {
+        switch (opt) {
+            case 'n':
+                asIP = optarg;
+                printf("n option: %s\n", optarg);
+                break;
+            case 'p':
+                asPort = optarg;
+                printf("p option: %s\n", optarg);
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (asIP == NULL) asIP = "127.0.0.1";
+    if (asPort == NULL) asPort = DEFAULT_PORT_G7;
+
+    printf("asIP: %s\n", asIP);
+    printf("asPort: %s\n", asPort);
+
     int fd_udp, fd_tcp, errcode;
     ssize_t n;
     socklen_t addrlen;
@@ -223,26 +249,25 @@ int main(){
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
 
-    if(sigaction(SIGPIPE,&act,NULL)==-1) exit(-1);
+    if(sigaction(SIGPIPE,&act,NULL) == -1) exit(-1);
 
     char buffer[MAXLINE];
 
-    fd_udp=socket(AF_INET,SOCK_DGRAM,0); //UDP socket
-    if(fd_udp==-1) /*error*/exit(1);
-    fd_tcp=socket(AF_INET,SOCK_STREAM,0); //TCP socket
-    if(fd_tcp==-1) /*error*/exit(1);
+    fd_udp = socket(AF_INET,SOCK_DGRAM,0); //UDP socket
+    if(fd_udp == -1) /*error*/exit(1);
+    fd_tcp = socket(AF_INET,SOCK_STREAM,0); //TCP socket
+    if(fd_tcp == -1) /*error*/exit(1);
 
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET; //IPv4
     hints.ai_socktype=SOCK_DGRAM; //UDP socket
     
-    errcode=getaddrinfo("localhost",PORT,&hints,&res);
-    if(errcode!=0) /*error*/ exit(1);
+    errcode = getaddrinfo(asIP, asPort, &hints, &res);
+    if(errcode != 0) /*error*/ exit(1);
 
     user.logged_in = 0;
 
-
-    while(loop){
+    while(1){
         memset(buffer, 0, sizeof(buffer));
         scanf(" %[^\n]", buffer);
         
@@ -251,46 +276,44 @@ int main(){
         if (do_continue) continue;
 
         if (send_udp) { //case udp
-            n=sendto(fd_udp, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
-            if(n==-1) /*error*/ exit(1);
+            n = sendto(fd_udp, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
+            if(n == -1) /*error*/ exit(1);
 
             memset(buffer, 0, MAXLINE);
 
             addrlen = sizeof(addr);
             n=recvfrom(fd_udp, buffer, MAXLINE, 0, (struct sockaddr*)&addr, &addrlen);
-            if(n==-1) /*error*/ exit(1);
+            if(n == -1) /*error*/ exit(1);
+            send_udp = 0;
         }
 
-        else { // case tcp
-            n=connect(fd_tcp,res->ai_addr,res->ai_addrlen);
-            if(n==-1)/*error*/ exit(1);
+        else if (send_tcp) { // case tcp
+            n = connect(fd_tcp,res->ai_addr,res->ai_addrlen);
+            if(n  ==  -1)/*error*/ exit(1);
             
-            n=write(fd_tcp,buffer,strlen(buffer));
-            if(n==-1) exit(1);
+            n = write(fd_tcp, buffer, MAXLINE);
+            if(n == -1) exit(1);
             memset(buffer, 0, MAXLINE);
 
-            if (bytes_img > 0) {
-                FILE *file = fopen(img_name, "rb");
-                if (!file) {
-                    perror("Error opening file");
-                    continue;
-                }
-                size_t bytesRead;
-                size_t aux =0;
-                while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) { //send image
-                    aux+=bytesRead;
-                    n=write(fd_tcp, buffer, strlen(buffer));
-                    memset(buffer, 0, MAXLINE);
-                    printf("Bytes sent: %ld\n", aux);
-                    if (bytesRead >= bytes_img) break;
-                }
+            n = read(fd_tcp, buffer, MAXLINE);
+            if(n  ==  -1) exit(1);
+
+            if (filesize > 0 && strncmp(buffer, "ROA OK ", 7) == 0) {
+                client_sendFile(fd_tcp, filepath, filesize);
+                n = read(fd_tcp, buffer, MAXLINE);
             }
-            n=read(fd_tcp, buffer, MAXLINE);
-            if(n==-1) exit(1);
+            else if (strncmp(buffer, "RSA OK ", 7) == 0) {
+                char path[NAME_SIZE];
+                char answer[MAXLINE];
+                strcpy(answer, buffer);
+                sscanf(buffer, "RSA OK %s %ld\n", path, &filesize);
+                client_receiveFile(fd_tcp, path, filesize);
+                n = read(fd_tcp, buffer, MAXLINE);
+                strcpy(buffer, answer);
+            }
             close(fd_tcp);
-            
+            send_tcp = 0;
         }
-        printf("Answer: %s", buffer);
         execute_answer_client(buffer);
         
         //empty command and reply

@@ -36,7 +36,6 @@ int login(char *buffer){
         char path[30];
         sprintf(path, "USERS/%s/%s_login.txt", uid, uid);
         if (access(path, F_OK) != 0){ // user was registered in the past
-            printf("path: %s\n", path);
             createLogin(uid);
             createPass(uid, password);
             sprintf(buffer, "RLI REG\n");
@@ -214,12 +213,33 @@ int show_record(char *buffer){ //TODO: LIST OF BIDS
     char start_date[11], start_time[10];
     getDetailsFromStartFile(aid, &auction);
 
-    printf("UDP SERVER "); printdate(auction.start_date); printtime(auction.start_time); printf("\n");
-
     sprintf(start_date, "%04d-%02d-%02d", auction.start_date.year, auction.start_date.month, auction.start_date.day);
     sprintf(start_time, "%02d:%02d:%02d", auction.start_time.hour, auction.start_time.minute, auction.start_time.second);
 
-    sprintf(buffer, "RRC OK %s %s %s %d %s %s %d\n", auction.host_uid, auction.name, auction.asset_fname, auction.start_value, start_date, start_time, auction.timeactive);
+    sprintf(buffer, "RRC OK %s %s %s %d %s %s %d", auction.host_uid, auction.name, auction.asset_fname, auction.start_value, start_date, start_time, auction.timeactive);
+
+    char *bids[50];
+    char path[30] = {0};
+    sprintf(path, "AUCTIONS/%03d/BIDS", aid);
+    int n_bids = getListOfFiles(path, bids);
+    char strbid[7] = {0};
+
+    qsort(bids, n_bids, sizeof(bids[0]), compareStrings);
+    for (int i = 0; i < n_bids; i--){
+        strncpy(strbid, bids[i], 6);
+        int bid_amount = atoi(strbid);
+        char bid_buffer[50] = {0};
+        getDetailsFromBIDSFile(aid, bid_amount, bid_buffer);
+        strcat(buffer, bid_buffer);
+    }
+
+    if (!checkActive(aid)) {
+        char end_buffer[35] = {0};
+        getDetailsFromENDFile(aid, end_buffer);
+        strcat(buffer, end_buffer);
+    }
+
+    strcat(buffer, "\n");
 
     return 0;
 }

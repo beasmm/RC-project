@@ -9,42 +9,24 @@
 #include "users.h"
 #include "auction.h"
 
-char state[10][3]={"NOK", "NLG", "OK", "EAU", "END", "ACC", "REF", "ILG", "ERR", "EOW"};
-
-int open_server(char *buffer, int aid){
+int open_server(char *buffer, int aid, char file_name[]){
     //Verify user details
-    printf("entering open\n");
     Auction auction;
     User user;
     char filename[50];
-    char data[1000];
-    FILE *fptr;
-    sscanf(buffer, "OPA %s %s %s %d %d %s %ld %s\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size, data);
-    auction.data = malloc(auction.size + 1);
-    strcpy(auction.data,data);
+    sscanf(buffer, "OPA %s %s %s %d %d %s %ld\n",user.uid, user.password, auction.name, &auction.start_value, &auction.timeactive, auction.asset_fname, &auction.size);
     memset(buffer, 0, 128);
 
-    printf("auction.name: %s\n", auction.name);
-    printf("auction.start_value: %d\n", auction.start_value);
-    printf("auction.timeactive: %d\n", auction.timeactive);
-    printf("auction.asset_fname: %s\n", auction.asset_fname);
-    printf("auction.size: %ld\n", auction.size);
-    printf("auction.data: %s\n", auction.data);
-   
-    if(checkRegistered(user.uid)==-1 || checkLogin(user.uid)==-1 || checkPassword(user.uid, user.password)!=0){
+    if(checkRegistered(user.uid) == -1 || checkLogin(user.uid) == -1 || checkPassword(user.uid, user.password) != 0){
         sprintf(buffer, "ROA NLG\n"); //user not logged in
         return 0;
     }
     else{
-        if(createAuctionDir(aid) == 1 && createStartFile(aid, user.uid, &auction)==1 && addToHosted(aid, user.uid)){
+        if(createAuctionDir(aid) == 1 && createStartFile(aid, user.uid, &auction) == 1 && addToHosted(aid, user.uid)){
             sprintf(filename, "AUCTIONS/%03d/ASSET/%s", aid, auction.asset_fname);
             createAssetFile(filename);
-            
-            fptr = fopen(filename, "w");
-            if(fptr == NULL) return 0;
-            fprintf(fptr, "%s", auction.data);
-            fclose(fptr);
             sprintf(buffer, "ROA OK %d\n", aid);
+            strcpy(file_name, filename);
             return auction.size;
         }
         else{
@@ -55,7 +37,6 @@ int open_server(char *buffer, int aid){
 }
 
 int close_server(char *buffer){
-    FILE *fptr;
     int aid;
     User user;
 
@@ -76,31 +57,8 @@ int close_server(char *buffer){
                 sprintf(buffer, "RCL END\n"); // auction has already finished
                 return 0;
             }
-            time_t t = time(NULL);
-            struct tm tm = *localtime(&t);
-            char filename[50];
-            int current_time, start_time, time_active;
-
-            memset(filename, 0, 50);
-            sprintf(filename, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
-            fptr = fopen(filename, "r");
-            fscanf(fptr, "%*s %*s %*s %*d %*d %*d-%*d-%*d %*d:%*d:%*d %d\n", &start_time);
-            fclose(fptr);
-
-            current_time = time(&t);
-            time_active = current_time - start_time;
-            
-            memset(filename, 0, 50);
-            sprintf(filename, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
-            fptr = fopen(filename, "w");
-            if (fptr == NULL) {
-                sprintf(buffer, "ERR\n"); // error closing auction
-                return 0;
-            }
-            fprintf(fptr, "%04d-%02d-%02d %02d:%02d:%02d %d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, time_active);
-            fclose(fptr);
-
             sprintf(buffer, "RCL OK\n"); // auction closed
+            createENDFile(aid);
             return 1;
         } 
         else {
@@ -110,17 +68,17 @@ int close_server(char *buffer){
     }
 }
 
-int show_asset_server(char *buffer){
+int show_asset_server(char *buffer, char file_name[]){
     Auction auction;
     sscanf(buffer, "SAS %d\n",&auction.aid);
     memset(buffer, 0, 128);
-    char straid[4] = {0};
-    sprintf(straid, "%03d",auction.aid);
-    if(getAssetFileName(straid, auction.asset_fname)!=0){ //can find asset
-        auction.size = checkAssetFile(straid);
-        getAsset(auction.asset_fname,auction.data);
-        sprintf(buffer, "RSA %s %s %ld %s\n",state[2], auction.asset_fname, auction.size, auction.data);
-        return 1;
+    if(getAssetFileName(auction.aid, auction.asset_fname) != 0){ //can find asset
+        char path[50];
+        sprintf(path, "AUCTIONS/%03d/ASSET/%s", auction.aid, auction.asset_fname);
+        auction.size = checkAssetFile(path);
+        sprintf(buffer, "RSA OK %s %ld\n", auction.asset_fname, auction.size);
+        strcpy(file_name, path);
+        return auction.size;
     }
     else{
         sprintf(buffer, "RSA NOK\n"); //cant find asset
@@ -156,4 +114,65 @@ int bid_server(char *buffer){
         sprintf(buffer, "RBD ACC\n"); //bid accepted
         return 1;
     }
+}
+
+//sending and transfering files
+int server_sendFile(int fd, char* filename, int size){
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) return -1;
+
+    int filefd = fileno(file);
+    size_t total_sent = 0;
+    size_t n_sent, n_read, done;
+    char data[MAXLINE];
+
+    // Read data from the file
+    while (total_sent < size) {
+        memset(data, 0, MAXLINE);
+        n_read = read(filefd, data, sizeof(data) - 1);
+        done = 0;
+        while (done < n_read) {
+            n_sent = write(fd, data + done, n_read - done);
+            if (n_sent == -1) {
+                perror("Error sending file");
+                fclose(file);
+                return -1;
+            }
+            done += n_sent;
+        }
+        total_sent += n_read;
+    }
+    fclose(file);
+    return 0;
+}
+
+int server_receiveFile(int fd, char *filename, int n){
+    FILE *file = fopen(filename, "wb");
+    if (file == NULL){
+        perror("Error opening file");
+        return -1;
+    }
+    
+    size_t total = 0;
+    size_t n_read, bytesRead, done;
+
+    char data[MAXLINE];
+    memset(data, 0, MAXLINE);
+
+    while (total < n) {
+        bytesRead = read(fd, data, sizeof(data));
+        done = 0;
+        while (done < bytesRead) {
+            n_read = fwrite(data, 1, bytesRead, file);
+            if (n_read == -1) {
+                perror("Error writing file");
+                fclose(file);
+                return -1;
+            }
+            done += n_read;
+        }
+        total += done;
+    }
+    fclose(file);
+    return 0;
 }

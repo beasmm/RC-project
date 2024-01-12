@@ -350,10 +350,6 @@ int getHost(int aid){
 
     int n_dir = getListOfFiles(path, users);
 
-    for(int i = 0; i < n_dir; i++){
-        printf("name: %s\n", users[i]);
-    }
-
     for (int i = 0; i < n_dir; i++){
         sprintf(path, "USERS/%s/HOSTED/%03d.txt", users[i], aid);
         if (access(path, F_OK) == 0) return atoi(users[i]);

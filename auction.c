@@ -6,7 +6,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-
 #include "users.h"
 #include "constants.h"
 
@@ -61,6 +60,54 @@ int initAuctions(){
     return 0;
 }
 
+int createENDFile(int aid){
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    char filename[50];
+    int current_time, start_time, time_active;
+
+    memset(filename, 0, 50);
+    sprintf(filename, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    FILE *fptr = fopen(filename, "r");
+    fscanf(fptr, "%*s %*s %*s %*d %*d %*d-%*d-%*d %*d:%*d:%*d %d\n", &start_time);
+    fclose(fptr);
+
+    current_time = time(&t);
+    time_active = current_time - start_time;
+    
+    memset(filename, 0, 50);
+    sprintf(filename, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
+
+    fptr = fopen(filename, "w");
+    if (fptr == NULL) return -1;
+
+    fprintf(fptr, "%04d-%02d-%02d %02d:%02d:%02d %d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, time_active);
+    
+    fclose(fptr);
+    return 0;
+}
+
+
+int checkExpiry(int aid){
+    time_t t = time(NULL);
+    int current_time, start_time, timeactive;
+
+    char path[40];
+    memset(path, 0, 40);
+    sprintf(path, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    FILE *fptr = fopen(path, "r");
+    if (fptr == NULL) return 0;
+    fscanf(fptr, "%*s %*s %*s %*d %d %*d-%*d-%*d %*d:%*d:%*d %d\n", &timeactive, &start_time);
+
+    current_time = time(&t);
+
+    if (current_time > start_time + timeactive){
+        createENDFile(aid);
+        return 1;
+    }
+    return 0;
+}
+
 // returns 1 if auction is active
 int checkActive(int aid){
     char aid_dirname[30];
@@ -69,7 +116,10 @@ int checkActive(int aid){
 
     if (access(aid_dirname, F_OK) == 0) return 0;
     
-    else return 1;
+    else {
+        if (checkExpiry(aid)) return 0;
+        return 1;
+    }
 }
 
 int createAuctionDir(int aid){
@@ -78,23 +128,17 @@ int createAuctionDir(int aid){
     char asset_dirname[20];
     int ret;
 
-    printf("aid: %03d\n", aid);
-
     if (aid < 1 || aid > 999) return 0;
 
     sprintf(aid_dirname, "AUCTIONS/%03d", aid);
 
     ret = mkdir(aid_dirname, 0777);
-    if (ret == -1) {
-        printf("mkdir1 failed\n");
-        return 0;
-    }
+    if (ret == -1) return 0;
 
     sprintf(bids_dirname, "AUCTIONS/%03d/BIDS", aid);
 
     ret=mkdir(bids_dirname, 0777);
-    if (ret == -1) {
-        printf("mkdir2 failed\n");
+    if (ret == -1){
         rmdir(aid_dirname);
         return 0;
     }
@@ -103,12 +147,10 @@ int createAuctionDir(int aid){
 
     ret=mkdir(asset_dirname, 0777);
     if (ret == -1) {
-        printf("mkdir3 failed\n");
         rmdir(aid_dirname);
         rmdir(bids_dirname);
         return 0;
     }
-    printf("Auction created\n");
     return 1;
 }
 
@@ -126,13 +168,6 @@ int getDetailsFromStartFile(int aid, Auction *auction){
             &auction->start_value, &auction->timeactive, &auction->start_date.year, &auction->start_date.month, 
             &auction->start_date.day, &auction->start_time.hour, &auction->start_time.minute, &auction->start_time.second);
 
-    printf("AUCTIONS name: %s, fname: %s, value: %d, timective: %d, date: ",
-            auction->name, auction->asset_fname, auction->start_value, auction->timeactive);
-    printdate(auction->start_date);
-    printf(", time: ");
-    printtime(auction->start_time);
-    printf("\n");
-
     fclose(fptr);
     
     return 1;
@@ -146,14 +181,14 @@ int createAssetFile(char *filename){
     return 1;
 }
 
-int getAssetFileName(char *aid, char asset_fname[]){ //returns 0 if no asset was found
+int getAssetFileName(int aid, char asset_fname[]){ //returns 0 if no asset was found
     char asset_dirname[30];
     char full_path[300];
     DIR *dir;
     struct dirent *ent;
     int i = 0;
 
-    sprintf(asset_dirname, "AUCTIONS/%s/ASSET", aid);
+    sprintf(asset_dirname, "AUCTIONS/%03d/ASSET", aid);
 
     dir = opendir(asset_dirname);
     if (dir == NULL) return 0;
@@ -185,6 +220,17 @@ int checkAssetFile(char *asset_fname){
 
     if(ret_stat == -1 || filestat.st_size == 0) return 0;
 
+    return (filestat.st_size);
+}
+
+long int getAssetSize(char *path){
+
+    struct stat filestat;
+    int ret_stat;
+
+    ret_stat = stat(path, &filestat);
+
+    if(ret_stat == -1 || filestat.st_size == 0) return 0;
     return (filestat.st_size);
 }
 
@@ -225,7 +271,6 @@ int auctionIsOwnedByUser(int aid, char *uid){
 }
 
 int createStartFile(int aid, char uid[], Auction *auction){
-    printf("aid: %03d\n", aid);
     char file_name[35];
     FILE *fptr;
 
@@ -234,12 +279,14 @@ int createStartFile(int aid, char uid[], Auction *auction){
     auction->aid = aid;
 
     sprintf(file_name, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
-    printf("file_name: %s\n", file_name);
+
     fptr = fopen(file_name, "w");
     if(fptr == NULL) return 0;
+    
     fprintf(fptr, "%s %s %s %d %d %04d-%02d-%02d %02d:%02d:%02d %ld\n", uid, auction->name, auction->asset_fname, 
             auction->start_value, auction->timeactive, tm.tm_year + 1900, tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, 
             tm.tm_min, tm.tm_sec,time(&t));
+
     fclose(fptr);
     return 1;
 }
@@ -260,7 +307,6 @@ int getBiggestBid(int aid){ //TODO: chech fname and path sizes no enunciado
         int bid = atoi(ent->d_name);
         if (bid > biggest_bid) biggest_bid = bid;
     }
-    printf("biggest_bid: %d\n", biggest_bid);
     return biggest_bid;
 }
 
@@ -281,8 +327,8 @@ int checkBidAmmount(int aid, int bid){
     else{
         min_bid = getBiggestBid(aid);
     }
-    printf("min_bid: %d\n", min_bid);
     if (bid > min_bid) return 1;
+
     return 0;
 }
 
@@ -292,11 +338,7 @@ int createBid(int aid, char* uid, int bid){ //UID bid_value bid_date bid_time bi
     FILE *fptr;
     time_t start_time, current_time, seconds;
 
-    printf("aid: %03d\n", aid);
-
     sprintf(file_name,"AUCTIONS/%03d/START_%03d.txt", aid, aid);
-
-    printf("file_name: %s\n", file_name);
 
     fptr = fopen(file_name, "r");
     if(fptr == NULL) return -1;
@@ -328,18 +370,60 @@ int createBid(int aid, char* uid, int bid){ //UID bid_value bid_date bid_time bi
     return 1;
 }
 
+int getDetailsFromBIDSFile(int aid, int bid_value, char *buffer){
+    Date *bid_date = malloc(sizeof(Date));
+    Time *bid_time = malloc(sizeof(Time));
+    int bid_sec_time;
+    char bidder[UID_SIZE] = {0}, path[35] = {0};
+    FILE *fptr;
+
+    sprintf(path, "AUCTIONS/%03d/BIDS/%06d.txt", aid, bid_value);
+
+    fptr = fopen(path, "r");
+    if (fptr == NULL) return 0;
+
+    fscanf(fptr, "%s %*d %4d-%2d-%2d %2d:%2d:%2d %d\n", bidder,  &bid_date->year,  &bid_date->month,  &bid_date->day, &bid_time->hour, &bid_time->minute, &bid_time->second, &bid_sec_time);
+
+    fclose(fptr);
+
+    sprintf(buffer, " B %s %d %04d-%02d-%02d %02d:%02d:%02d %d", bidder, bid_value, bid_date->year, bid_date->month, bid_date->day, bid_time->hour, bid_time->minute, bid_time->second, bid_sec_time);
+    
+    free(bid_date);
+    free(bid_time);
+
+    return 1;
+}
+
+int getDetailsFromENDFile(int aid, char *buffer){
+    Date *end_date = malloc(sizeof(Date));
+    Time *end_time = malloc(sizeof(Time));
+    int time_active;
+    char path[35] = {0};
+    FILE *fptr;
+
+    sprintf(path, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
+
+    fptr = fopen(path, "r");
+    if (fptr == NULL) return 0;
+
+    fscanf(fptr, "%4d-%2d-%2d %2d:%2d:%2d %d\n", &end_date->year,  &end_date->month,  &end_date->day, &end_time->hour, &end_time->minute, &end_time->second, &time_active);
+
+    fclose(fptr);
+
+    sprintf(buffer, " E %04d-%02d-%02d %02d:%02d:%02d %d", end_date->year, end_date->month, end_date->day, end_time->hour, end_time->minute, end_time->second, time_active);
+    
+    free(end_date); 
+    free(end_time);
+
+    return 1;
+}
+
 int writeAuctionData(int aid, char *data, size_t bytesRead){
     char file_path[128];
     char file_name[35];
     FILE *fptr;
-    char straid[4];
 
-    printf("aid: %03d\n", aid);
-    printf("data: %s\n", data);
-
-    sprintf(straid, "%03d", aid);
-
-    getAssetFileName(straid, file_name);
+    getAssetFileName(aid, file_name);
 
     sprintf(file_path, "AUCTIONS/%03d/ASSET/%s", aid, file_name);
     fptr = fopen(file_path, "wb");

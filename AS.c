@@ -16,14 +16,15 @@
 #include <sys/select.h>
 #include <time.h>
 
-#define PORT 58011
+#define DEFAULT_PORT_G7 58007
 
 
 #include "users.h"
 #include "auction.h"
 #include "operations_server.h"
 
-int read_file = 0;
+int read_file = 0, send_file = 0;
+char file_name[25] = {0};
 
 int max(int x, int y) 
 { 
@@ -105,20 +106,21 @@ int executeCommands(char *buffer){
             mybids(buffer);
             break;
         case CMD_SHOW_RECORD:
-            ret = show_record(buffer);
+            show_record(buffer);
             break;
         case CMD_LIST:
             list(buffer);
             break;
         case CMD_OPA:
-            open_server(buffer, getAuctionID());
+            ret = open_server(buffer, getAuctionID(), file_name);
             read_file = 1;
             break;
         case CMD_CLS:
             close_server(buffer);
             break;
         case CMD_SAS:
-            show_asset_server(buffer);
+            ret = show_asset_server(buffer, file_name);
+            send_file = 1;
             break;
         case CMD_BID:
             bid_server(buffer);
@@ -132,16 +134,38 @@ int executeCommands(char *buffer){
 }
 
 
-int main() { 
+int main(int argc, char **argv) { 
+    int port = 0;
+    int verbose = 0;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "p:v")) != -1) {
+        switch (opt) {
+            case 'p':
+                port = atoi(optarg);
+                break;
+            case 'v':
+                verbose = 1;
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (port == 0) port = DEFAULT_PORT_G7;
+
+    printf("port: %d\n", port);
+    printf("verbose: %d\n", verbose);
+
+    initUsers();
+    initAuctions();
+
 	int listenfd, newfd, udpfd, maxfdp1; 
 	char buffer[MAXLINE]; 
-	pid_t childpid; 
 	fd_set rset; 
 	ssize_t n; 
 	socklen_t len; 
 	struct sockaddr_in cliaddr, servaddr; 
-	void sig_chld(int); 
-
 
 	/* create listening TCP socket */
 	listenfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -149,74 +173,94 @@ int main() {
 	servaddr.sin_family = AF_INET; 
     inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 	//servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-	servaddr.sin_port = htons(PORT); 
+	servaddr.sin_port = htons(port); 
 
+    // Set SO_REUSEADDR option to allow quick restart
+    int enabled = 1;
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &enabled, sizeof(enabled)) < 0) {
+        close(listenfd);
+        perror("setsockopt(SO_REUSEADDR) failed");
+        exit(1);
+    }
 	// binding server addr structure to listenfd 
 	n = bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
-    if(n==-1) exit(1);
-    listen(listenfd, 5);
+    if(n == -1){
+        perror("Failed to bind listenfd");
+        exit(1);
+    }
+    n = listen(listenfd, 10);
+    if(n == -1){
+        perror("Failed to listen");
+        exit(1);
+    }
 
 	/* create UDP socket */
 	udpfd = socket(AF_INET, SOCK_DGRAM, 0); 
+
 	// binding server addr structure to udp sockfd 
-	bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
+	n = bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
+    if(n == -1){
+        perror("Failed to bind udpfd");
+        exit(1);
+    }
 
-	// clear the descriptor set 
-	FD_ZERO(&rset); 
-
-	// get maxfd 
-	maxfdp1 = max(listenfd, udpfd) + 1; 
-
-    initUsers();
-    initAuctions();
-
-	for (;;) { 
-
+	while (1) {
+        // clear the descriptor set 
+	    FD_ZERO(&rset); 
+        
 		// set listenfd and udpfd in readset 
 		FD_SET(listenfd, &rset); 
 		FD_SET(udpfd, &rset); 
 
-		// select the ready descriptor 
-		select(maxfdp1, &rset, NULL, NULL, NULL); 
+        // get maxfd 
+        maxfdp1 = max(listenfd, udpfd) + 1; 
 
+		// select the ready descriptor 
+		int ready = select(maxfdp1, &rset, NULL, NULL, NULL); 
+        if (ready < 0){
+            perror("select");
+            return 1;
+        }
 
 		// if tcp socket is readable then handle 
 		// it by accepting the connection 
 		if (FD_ISSET(listenfd, &rset)) { 
             printf("TCP\n");
 			len = sizeof(cliaddr); 
-			if ((newfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len)) == -1) exit(1); 
-			if ((childpid = fork()) == 0) {
-				close(listenfd); 
-				memset(buffer, 0, sizeof(buffer));
-				n = read(newfd, buffer, sizeof(buffer)); 
-                if (n==-1) exit(1);
-                write(1, "Received: ", 10); write(1, buffer, n);
-                int f_size = executeCommands(buffer);
-                if (read_file && strcmp(buffer, "ROA NOK") != 0) {
-                    size_t bytesRead;
-                    size_t aux =0;
-                    char temp_buffer[MAXLINE];
-                    strcpy(temp_buffer, buffer);
-                    while ((bytesRead = read(newfd, buffer, sizeof(buffer))) > 0) {
-                        aux+=bytesRead;
-                        printf("Received data: %s\n", buffer);
-                        printf("Bytes read: %ld\n", aux);
-                        writeAuctionData(getAuctionID()-1, buffer, bytesRead);
-                        f_size -= bytesRead;
-                        if (f_size <= 0) break;
-                    }
-                    read_file = 0;
-                    memset(buffer, 0, sizeof(buffer));
-                    strcpy(buffer, temp_buffer);
-                    memset(temp_buffer, 0, sizeof(temp_buffer));
-                }
-                printf("Sending: %s",buffer);
-                n=write(newfd, buffer, strlen(buffer));
-                printf("%ld\n", n);
-                if(n==-1) exit(1);
-			} 
+			if ((newfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len)) == -1) {
+                perror("Failed to accept");
+                exit(1); 
+            }
+
+            memset(buffer, 0, sizeof(buffer));
+            n = read(newfd, buffer, sizeof(buffer)); 
+            if (n == -1) {
+                perror("Failed to read");
+                exit(1);
+            }
+            if (verbose){
+                char clientIP[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &(cliaddr.sin_addr), clientIP, INET_ADDRSTRLEN);
+                printf("Accepted TCP connection from IP: %s, Port: %d\n", clientIP, ntohs(cliaddr.sin_port));
+            }
+            write(1, "Received: ", 10); write(1, buffer, n);
+            int f_size = executeCommands(buffer);
+            n = write(newfd, buffer, MAXLINE);
+            if (read_file && strcmp(buffer, "ROA NOK") != 0 && strcmp(buffer, "ROA NLG") != 0) {
+                server_receiveFile(newfd, file_name, f_size);
+            }
+            read_file = 0;
+            if (send_file && strncmp(buffer, "RSA OK ", 7) == 0) {
+                server_sendFile(newfd, file_name, f_size);
+            }
+            send_file = 0;
+            n = write(newfd, buffer, MAXLINE);
+            if(n == -1) {
+                perror("Failed to write");
+                exit(1);
+            }
 			close(newfd); 
+            newfd = -1;
 		} 
 		// if udp socket is readable receive the message. 
 		if (FD_ISSET(udpfd, &rset)) { 
@@ -224,13 +268,23 @@ int main() {
 			len = sizeof(cliaddr); 
             memset(buffer, 0, sizeof(buffer)); 
 			n = recvfrom(udpfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr, &len); 
-            if (n==-1) exit(1);
+            if (n == -1) {
+                perror("Failed to read");
+                exit(1);
+            }
+            if (verbose){
+                char clientIP[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &(cliaddr.sin_addr), clientIP, INET_ADDRSTRLEN);
+                printf("Received UDP message from IP: %s, Port: %d\n", clientIP, ntohs(cliaddr.sin_port));
+            }
             write(1, "Received: ", 10); write(1, buffer, n);
             executeCommands(buffer);
             printf("Sending: %s", buffer);
 			n = sendto(udpfd, (const char*)buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr)); 
-            if(n==-1)/*error*/exit(1);
-
+            if(n == -1){
+                perror("Failed to send");
+                exit(1);
+            }
 		} 
 	} 
     close(udpfd);

@@ -37,4 +37,8 @@ int client_close_answer(char *buffer);
 int client_show_asset_answer(char *buffer);
 int client_bid_answer(char *buffer);
 
+//sending and transfering files
+int client_sendFile(int fd, char* filename, int size);
+int client_receiveFile(int fd, char* filename, int size);
+
 #endif /* CONSTANTS_TCP_H */
